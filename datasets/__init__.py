@@ -21,7 +21,7 @@ def get_cifar10_loaders():
 
     }
 
-    full_train_loader = torch.utils.data.DataLoader(
+    train_loader = torch.utils.data.DataLoader(
         dataset=original_train_dataset,
         shuffle=True,
         **loader_args)
@@ -30,6 +30,9 @@ def get_cifar10_loaders():
         dataset=original_test_dataset,
         shuffle=False,
         **loader_args)
+
+    return {"train_loader": train_loader,
+            "test_loader": test_loader}
 
 def get_cifar10_half_loaders():
     normalize_transform = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
