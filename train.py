@@ -80,8 +80,8 @@ for epoch in range(1, args.epochs + 1):
     train_loss = np.mean(losses)
     train_accuracy = np.mean(accuracies)
     print("Train accuracy: {} Train loss: {}".format(train_accuracy, train_loss))
-    summary_writer.add_scalar("test_loss", train_loss, epoch)
-    summary_writer.add_scalar("test_accuracy", train_accuracy, epoch)
+    summary_writer.add_scalar("train_loss", train_loss, epoch)
+    summary_writer.add_scalar("train_accuracy", train_accuracy, epoch)
 
     accuracies = []
     losses = []
