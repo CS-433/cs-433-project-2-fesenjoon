@@ -8,6 +8,7 @@ import torch
 
 import models
 import datasets
+from tensorboardX import SummaryWriter
 
 parser = argparse.ArgumentParser()
 parser.add_argument('title', type=str)
@@ -56,6 +57,7 @@ model = models.get_model(args.model).to(device)
 loaders = datasets.get_dataset(args.dataset)
 optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
 criterion = torch.nn.CrossEntropyLoss()
+summary_writer = SummaryWriter(logdir=experiment_dir)
 
 for epoch in range(1, args.epochs + 1):
     print(f"Epoch {epoch}")
@@ -75,7 +77,11 @@ for epoch in range(1, args.epochs + 1):
         accuracies.append(batch_accuracy.item())
         losses.append(loss.item())
 
-    print("Train accuracy: {} Train loss: {}".format(np.mean(accuracies), np.mean(losses)))
+    train_loss = np.mean(losses)
+    train_accuracy = np.mean(accuracies)
+    print("Train accuracy: {} Train loss: {}".format(train_accuracy, train_loss))
+    summary_writer.add_scalar("test_loss", train_loss, epoch)
+    summary_writer.add_scalar("test_accuracy", traian_accuracy, epoch)
 
     accuracies = []
     losses = []
@@ -90,7 +96,11 @@ for epoch in range(1, args.epochs + 1):
         accuracies.append(batch_accuracy.item())
         losses.append(loss.item())
 
-    print("Test accuracy: {} Test loss: {}".format(np.mean(accuracies), np.mean(losses)))
+    test_loss = np.mean(losses)
+    test_accuracy = np.mean(accuracies)
+    print("Test accuracy: {} Test loss: {}".format(test_accuracy, test_loss))
+    summary_writer.add_scalar("test_loss", test_loss, epoch)
+    summary_writer.add_scalar("test_accuracy", test_accuracy, epoch)
 
     torch.save({
         'model': model.state_dict()
