@@ -42,6 +42,7 @@ np.random.seed(args.random_seed)
 
 if torch.cuda.is_available():
     device = torch.device('cuda:0')
+    print("CUDA Recognized")
 else:
     device = torch.device('cpu')
 
