@@ -72,8 +72,8 @@ for epoch in range(1, args.epochs + 1):
         loss.backward()
         optimizer.step()
 
-        accuracies.append(batch_accuracy)
-        losses.append(loss)
+        accuracies.append(batch_accuracy.item())
+        losses.append(loss.item())
 
     print("Train accuracy: {} Train loss: {}".format(np.mean(accuracies), np.mean(losses)))
 
@@ -87,8 +87,8 @@ for epoch in range(1, args.epochs + 1):
         loss = criterion(model_y, data_y)
         batch_accuracy = get_accuracy(model_y, data_y)
 
-        accuracies.append(batch_accuracy)
-        losses.append(loss)
+        accuracies.append(batch_accuracy.item())
+        losses.append(loss.item())
 
     print("Test accuracy: {} Test loss: {}".format(np.mean(accuracies), np.mean(losses)))
 
