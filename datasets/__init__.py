@@ -17,7 +17,7 @@ def get_cifar10_loaders():
                                              train=False, transform=test_transform, download=True)
 
     loader_args = {
-        "batch_size": 256,
+        "batch_size": 128,
 
     }
 
@@ -49,7 +49,7 @@ def get_cifar10_half_loaders():
     half_train_dataset, _ = random_split(original_train_dataset, [dataset_size - split, split])
 
     loader_args = {
-        "batch_size": 256,
+        "batch_size": 128,
 
     }
 
