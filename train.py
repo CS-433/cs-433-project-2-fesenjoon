@@ -109,6 +109,7 @@ def main(args):
         }, os.path.join(experiment_dir, f'chkpt_epoch{epoch}.pt'))
 
 
-parser = build_parser()
-args = parser.parse_args()
-main(args)
+if __name__ == "__main__":
+    parser = build_parser()
+    args = parser.parse_args()
+    main(args)
