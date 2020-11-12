@@ -19,6 +19,8 @@ def build_parser():
     parser.add_argument('--lr', type=float, default=0.1)
     parser.add_argument('--epochs', type=int, default=200)
     parser.add_argument('--random-seed', type=int, default=42)
+    parser.add_argument('--save-per-epoch', action='store_true', default=False)
+    parser.add_argument('--checkpoint', default=None)
     return parser
 
 
@@ -32,12 +34,10 @@ def main(args):
         print(key, ": ", args_dict[key])
     print("---")
 
-
     experiment_dir = os.path.join('exp', args.title, datetime.now().strftime('%b%d_%H-%M-%S'))
     os.makedirs(experiment_dir)
     with open(os.path.join(experiment_dir, "config.json"), "w") as f:
         json.dump(args_dict, f, indent=4, sort_keys=True, default=lambda x: x.__name__)
-
 
     # Set the seed
     torch.manual_seed(args.random_seed)
@@ -49,17 +49,18 @@ def main(args):
     else:
         device = torch.device('cpu')
 
-
     def get_accuracy(logit, true_y):
         pred_y = torch.argmax(logit, dim=1)
         return (pred_y == true_y).sum() / len(true_y)
-
 
     model = models.get_model(args.model).to(device)
     loaders = datasets.get_dataset(args.dataset)
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
     criterion = torch.nn.CrossEntropyLoss()
     summary_writer = SummaryWriter(logdir=experiment_dir)
+
+    if args.checkpoint:
+        model.load_state_dict(torch.load(args.checkpoint, map_location=device)['model'])
 
     for epoch in range(1, args.epochs + 1):
         print(f"Epoch {epoch}")
@@ -104,9 +105,14 @@ def main(args):
         summary_writer.add_scalar("test_loss", test_loss, epoch)
         summary_writer.add_scalar("test_accuracy", test_accuracy, epoch)
 
-        torch.save({
-            'model': model.state_dict()
-        }, os.path.join(experiment_dir, f'chkpt_epoch{epoch}.pt'))
+        if args.save_per_epoch:
+            torch.save({
+                'model': model.state_dict()
+            }, os.path.join(experiment_dir, f'chkpt_epoch{epoch}.pt'))
+
+    torch.save({
+        'model': model.state_dict()
+    }, os.path.join(experiment_dir, 'final.pt'))
 
 
 if __name__ == "__main__":
