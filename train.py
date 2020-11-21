@@ -64,8 +64,9 @@ def main(args):
     if args.checkpoint:
         model.load_state_dict(torch.load(args.checkpoint, map_location=device)['model'])
         dummy_model = models.get_model(args.model).to(device)
-        for real_parameter, random_parameter in zip(model.parameters(), dummy_model.parameters()):
-            real_parameter.mul_(args.checkpoint_shrink).add_(random_parameter, alpha=args.checkpoint_perturb)
+        with torch.no_grad():
+            for real_parameter, random_parameter in zip(model.parameters(), dummy_model.parameters()):
+                real_parameter.mul_(args.checkpoint_shrink).add_(random_parameter, alpha=args.checkpoint_perturb)
 
     for epoch in range(1, args.epochs + 1):
         print(f"Epoch {epoch}")
