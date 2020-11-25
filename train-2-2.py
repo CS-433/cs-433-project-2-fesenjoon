@@ -205,7 +205,7 @@ def main(args):
     axs[1].plot(number_of_samples_offline, training_times_offline, label='random', color='C1')
     axs[1].set_ylabel("Train Time (seconds)")
     axs[1].set_xlabel("Number of Samples (thousands)")
-    plt.savefig("figure2.pdf")
+    plt.savefig("figures/figure2.pdf")
             
             
             
