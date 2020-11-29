@@ -6,6 +6,34 @@ from torchvision import transforms, datasets
 import  numpy as np
 
 
+def get_svhn_loaders():
+    train_transform = transforms.Compose([transforms.ToTensor()])
+
+    dataset = datasets.SVHN(root=os.path.join('data', 'svhn_data'),
+                            transform=train_transform, download=True)
+    val_dataset_size = int(len(dataset) / 3)
+    train_dataset_size = len(dataset) - val_dataset_size
+    train_dataset, val_dataset = random_split(dataset, [train_dataset_size, val_dataset_size])
+
+    loader_args = {
+        "batch_size": 128,
+
+    }
+
+    train_loader = torch.utils.data.DataLoader(
+        dataset=train_dataset,
+        shuffle=True,
+        **loader_args)
+
+    test_loader = torch.utils.data.DataLoader(
+        dataset=val_dataset,
+        shuffle=False,
+        **loader_args)
+
+    return {"train_loader": train_loader,
+            "test_loader": test_loader}
+
+
 def get_cifar10_loaders():
     normalize_transform = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     train_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
@@ -154,7 +182,8 @@ dataset_factories = {
     'cifar10': get_cifar10_loaders,
     'half_cifar10': get_cifar10_half_loaders,
     'partial_with_val_cifar10': get_cifar10_partial_with_val_loader,
-    'online_with_val_cifar10': get_cifar10_online_with_val_loader
+    'online_with_val_cifar10': get_cifar10_online_with_val_loader,
+    'svhn': get_svhn_loaders,
 }
 
 
