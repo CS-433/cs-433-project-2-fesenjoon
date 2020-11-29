@@ -150,9 +150,139 @@ def get_cifar10_online_with_val_loader(split_size):
 
 
 
+def get_cifar100_loaders():
+    normalize_transform = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+    train_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
+    test_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
+
+    original_train_dataset = datasets.CIFAR100(root=os.path.join('data', 'cifar100_data'),
+                                              train=True, transform=train_transform, download=True)
+    original_test_dataset = datasets.CIFAR100(root=os.path.join('data', 'cifar100_data'),
+                                             train=False, transform=test_transform, download=True)
+
+    loader_args = {
+        "batch_size": 128,
+
+    }
+
+    train_loader = torch.utils.data.DataLoader(
+        dataset=original_train_dataset,
+        shuffle=True,
+        **loader_args)
+
+    test_loader = torch.utils.data.DataLoader(
+        dataset=original_test_dataset,
+        shuffle=False,
+        **loader_args)
+
+    return {"train_loader": train_loader,
+            "test_loader": test_loader}
+
+def get_cifar100_half_loaders():
+    normalize_transform = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+    train_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
+    test_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
+
+    original_train_dataset = datasets.CIFAR100(root=os.path.join('data', 'cifar100_data'),
+                                              train=True, transform=train_transform, download=True)
+    original_test_dataset = datasets.CIFAR100(root=os.path.join('data', 'cifar100_data'),
+                                             train=False, transform=test_transform, download=True)
+
+    dataset_size = len(original_train_dataset)
+    split = int(np.floor(0.5 * dataset_size))
+    half_train_dataset, _ = random_split(original_train_dataset, [dataset_size - split, split])
+
+    loader_args = {
+        "batch_size": 128,
+
+    }
+
+    train_loader = torch.utils.data.DataLoader(
+        dataset=half_train_dataset,
+        shuffle=True,
+        **loader_args)
+
+    test_loader = torch.utils.data.DataLoader(
+        dataset=original_test_dataset,
+        shuffle=False,
+        **loader_args)
+
+    return {"train_loader": train_loader,
+            "test_loader": test_loader}
+
+
+def get_svhn_loaders():
+    normalize_transform = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+    train_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
+    test_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
+
+    original_train_dataset = datasets.SVHN(root=os.path.join('data', 'SVHN_data'),
+                                              split="train", transform=train_transform, download=True)
+    original_test_dataset = datasets.SVHN(root=os.path.join('data', 'SVHN_data'),
+                                             split="test", transform=test_transform, download=True)
+
+    loader_args = {
+        "batch_size": 128,
+
+    }
+
+    train_loader = torch.utils.data.DataLoader(
+        dataset=original_train_dataset,
+        shuffle=True,
+        **loader_args)
+
+    test_loader = torch.utils.data.DataLoader(
+        dataset=original_test_dataset,
+        shuffle=False,
+        **loader_args)
+
+    return {"train_loader": train_loader,
+            "test_loader": test_loader}
+
+def get_svhn_half_loaders():
+    normalize_transform = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+    train_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
+    test_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
+
+    original_train_dataset = datasets.SVHN(root=os.path.join('data', 'SVHN_data'),
+                                              split='train', transform=train_transform, download=True)
+    original_test_dataset = datasets.SVHN(root=os.path.join('data', 'SVHN_data'),
+                                             split='test', transform=test_transform, download=True)
+
+    dataset_size = len(original_train_dataset)
+    split = int(np.floor(0.5 * dataset_size))
+    half_train_dataset, _ = random_split(original_train_dataset, [dataset_size - split, split])
+
+    loader_args = {
+        "batch_size": 128,
+
+    }
+
+    train_loader = torch.utils.data.DataLoader(
+        dataset=half_train_dataset,
+        shuffle=True,
+        **loader_args)
+
+    test_loader = torch.utils.data.DataLoader(
+        dataset=original_test_dataset,
+        shuffle=False,
+        **loader_args)
+
+    return {"train_loader": train_loader,
+            "test_loader": test_loader}
+
+
+
 dataset_factories = {
     'cifar10': get_cifar10_loaders,
     'half_cifar10': get_cifar10_half_loaders,
+    
+    'cifar100': get_cifar100_loaders,
+    'half_cifar100': get_cifar100_half_loaders,
+    
+    'svhn': get_svhn_loaders,
+    'half_svhn': get_svhn_half_loaders,
+    
     'partial_with_val_cifar10': get_cifar10_partial_with_val_loader,
     'online_with_val_cifar10': get_cifar10_online_with_val_loader
 }
