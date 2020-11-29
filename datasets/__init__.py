@@ -1,9 +1,37 @@
 import os
 
 import torch
-from torch.utils.data import random_split
+from torch.utils.data import random_split, ConcatDataset
 from torchvision import transforms, datasets
 import  numpy as np
+
+
+def get_svhn_loaders():
+    train_transform = transforms.Compose([transforms.ToTensor()])
+
+    dataset = datasets.SVHN(root=os.path.join('data', 'svhn_data'),
+                            transform=train_transform, download=True)
+    val_dataset_size = int(len(dataset) / 3)
+    train_dataset_size = len(dataset) - val_dataset_size
+    train_dataset, val_dataset = random_split(dataset, [train_dataset_size, val_dataset_size])
+
+    loader_args = {
+        "batch_size": 128,
+
+    }
+
+    train_loader = torch.utils.data.DataLoader(
+        dataset=train_dataset,
+        shuffle=True,
+        **loader_args)
+
+    test_loader = torch.utils.data.DataLoader(
+        dataset=val_dataset,
+        shuffle=False,
+        **loader_args)
+
+    return {"train_loader": train_loader,
+            "test_loader": test_loader}
 
 
 def get_cifar10_loaders():
@@ -128,10 +156,15 @@ def get_cifar10_online_with_val_loader(split_size):
 
     }
 
-    train_loaders = [torch.utils.data.DataLoader(
-        dataset=train_dataset,
-        shuffle=True,
-        **loader_args) for train_dataset in train_datasets]
+    train_loaders = []
+    active_datasets = []
+    for train_dataset in train_datasets:
+        active_datasets.append(train_dataset)
+        train_loaders.append(torch.utils.data.DataLoader(
+            dataset=ConcatDataset(active_datasets),
+            shuffle=True,
+            **loader_args
+        ))
 
     test_loader = torch.utils.data.DataLoader(
         dataset=original_test_dataset,
@@ -284,7 +317,8 @@ dataset_factories = {
     'half_svhn': get_svhn_half_loaders,
     
     'partial_with_val_cifar10': get_cifar10_partial_with_val_loader,
-    'online_with_val_cifar10': get_cifar10_online_with_val_loader
+    'online_with_val_cifar10': get_cifar10_online_with_val_loader,
+    'svhn': get_svhn_loaders,
 }
 
 
