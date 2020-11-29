@@ -1,7 +1,7 @@
 import os
 
 import torch
-from torch.utils.data import random_split
+from torch.utils.data import random_split, ConcatDataset
 from torchvision import transforms, datasets
 import  numpy as np
 
@@ -156,10 +156,15 @@ def get_cifar10_online_with_val_loader(split_size):
 
     }
 
-    train_loaders = [torch.utils.data.DataLoader(
-        dataset=train_dataset,
-        shuffle=True,
-        **loader_args) for train_dataset in train_datasets]
+    train_loaders = []
+    active_datasets = []
+    for train_dataset in train_datasets:
+        active_datasets.append(train_dataset)
+        train_loaders.append(torch.utils.data.DataLoader(
+            dataset=ConcatDataset(active_datasets),
+            shuffle=True,
+            **loader_args
+        ))
 
     test_loader = torch.utils.data.DataLoader(
         dataset=original_test_dataset,
