@@ -23,6 +23,7 @@ def build_parser():
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--split-size', type=int, default=5000)
     parser.add_argument('--random-seed', type=int, default=42)
+    parser.add_argument('--convergence-epochs', type=int, default=5) # If the minimum val loss does not decrease in 3 epochs training will stop
 #     parser.add_argument('--save-per-epoch', action='store_true', default=False)
     parser.add_argument('--checkpoint', default=None)
     parser.add_argument('--checkpoint-shrink', default=1.0, type=float)
@@ -122,25 +123,25 @@ def main(args):
             for real_parameter, random_parameter in zip(model.parameters(), random_model.parameters()):
                 real_parameter.mul_(args.checkpoint_shrink).add_(random_parameter, alpha=args.checkpoint_perturb)
         
-        val_accuracies = []
-        stop_indicator = False
-        while(not stop_indicator):
+        train_accuracies = []
+        while True:
             if epoch % 5 == 0:
                 print(f"Starting training in epoch {epoch + 1}")
             train_loss, train_accuracy = train_one_epoch(model, optimizer, criterion, train_loader)
             val_loss, val_accuracy =  eval_on_dataloader(model, loaders['val_loader'])
             test_loss, test_accuracy = eval_on_dataloader(model, loaders['test_loader'])
-            val_accuracies.append(val_accuracy)
+            train_accuracies.append(train_accuracy)
             epoch += 1
-            if train_accuracy >= 0.99:
-                print("Convergence codition met")
-                stop_indicator = True
             summary_writer.add_scalar("test_accuracy", test_accuracy, epoch)
             summary_writer.add_scalar("test_loss", test_loss, epoch)
             summary_writer.add_scalar("train_accuracy", train_accuracy, epoch)
             summary_writer.add_scalar("train_loss", train_loss, epoch)
             summary_writer.add_scalar("val_accuracy", val_accuracy, epoch)
             summary_writer.add_scalar("val_loss", val_loss, epoch)
+            if len(train_accuracies) >= args.convergence_epochs and \
+                    max(train_accuracies) not in train_accuracies[-args.convergence_epochs:]:
+                print("Convergence condition met")
+                break
 
         val_loss, val_accuracy = eval_on_dataloader(model, loaders['val_loader'])
         test_loss, test_accuracy = eval_on_dataloader(model, loaders['test_loader'])
