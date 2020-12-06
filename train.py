@@ -23,6 +23,7 @@ def build_parser():
     parser.add_argument('--checkpoint', default=None)
     parser.add_argument('--checkpoint-shrink', default=1.0, type=float)
     parser.add_argument('--checkpoint-perturb', default=0.0, type=float)
+    parser.add_argument('--checkpoint-num-classes', default=None, type=int)
     return parser
 
 
