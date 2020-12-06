@@ -71,7 +71,7 @@ def main(args):
         model.load_state_dict(torch.load(args.checkpoint, map_location=device)['model'])
         if real_fc is not None:
             model.fc = real_fc
-        dummy_model = models.get_model(args.model).to(device)
+        dummy_model = models.get_model(args.model, num_classes=num_classes).to(device)
         with torch.no_grad():
             for real_parameter, random_parameter in zip(model.parameters(), dummy_model.parameters()):
                 real_parameter.mul_(args.checkpoint_shrink).add_(random_parameter, alpha=args.checkpoint_perturb)
