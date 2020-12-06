@@ -56,14 +56,20 @@ def main(args):
         return (pred_y == true_y).sum() / len(true_y)
 
     loaders = datasets.get_dataset(args.dataset)
-    model = models.get_model(args.model, num_classes=loaders.get('num_classes', 10)).to(device)
-
+    num_classes = loaders.get('num_classes', 10)
+    model = models.get_model(args.model, num_classes=num_classes).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
     criterion = torch.nn.CrossEntropyLoss()
     summary_writer = SummaryWriter(logdir=experiment_dir)
 
     if args.checkpoint:
+        real_fc = None
+        if args.checkpoint_num_classes is not None and args.checkpoint_num_classes != num_classes:
+            real_fc = model.fc
+            model.fc = torch.nn.Linear(model.fc.in_features, args.checkpoint_num_classes)
         model.load_state_dict(torch.load(args.checkpoint, map_location=device)['model'])
+        if real_fc is not None:
+            model.fc = real_fc
         dummy_model = models.get_model(args.model).to(device)
         with torch.no_grad():
             for real_parameter, random_parameter in zip(model.parameters(), dummy_model.parameters()):
