@@ -55,8 +55,9 @@ def main(args):
         pred_y = torch.argmax(logit, dim=1)
         return (pred_y == true_y).sum() / len(true_y)
 
-    model = models.get_model(args.model).to(device)
     loaders = datasets.get_dataset(args.dataset)
+    model = models.get_model(args.model, num_classes=loaders.get('num_classes', 10)).to(device)
+
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
     criterion = torch.nn.CrossEntropyLoss()
     summary_writer = SummaryWriter(logdir=experiment_dir)

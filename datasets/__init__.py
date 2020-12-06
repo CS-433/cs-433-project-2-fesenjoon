@@ -107,7 +107,8 @@ def get_cifar100_loaders(use_half_train=False):
         **loader_args)
 
     return {"train_loader": train_loader,
-            "test_loader": test_loader}
+            "test_loader": test_loader,
+            "num_classes": 100}
 
 
 def get_cifar10_partial_with_val_loader(n_train):
