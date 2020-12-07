@@ -16,6 +16,7 @@ def build_parser():
     parser.add_argument('title', type=str)
     parser.add_argument('--model', type=str, default='resnet18', choices=models.get_available_models())
     parser.add_argument('--dataset', type=str, default='cifar10', choices=datasets.get_available_datasets())
+    parser.add_argument('--dataset-portion', type=float, required=False, default=None)
     parser.add_argument('--lr', type=float, default=0.1)
     parser.add_argument('--epochs', type=int, default=200)
     parser.add_argument('--random-seed', type=int, default=42)
@@ -27,7 +28,7 @@ def build_parser():
     return parser
 
 
-def main(args):
+def main(args, experiment_dir=None):
     print("Running with arguments:")
     args_dict = {}
     for key in vars(args):
@@ -37,7 +38,8 @@ def main(args):
         print(key, ": ", args_dict[key])
     print("---")
 
-    experiment_dir = os.path.join('exp', args.title, datetime.now().strftime('%b%d_%H-%M-%S'))
+    if experiment_dir is None:
+        experiment_dir = os.path.join('exp', args.title, datetime.now().strftime('%b%d_%H-%M-%S'))
     os.makedirs(experiment_dir)
     with open(os.path.join(experiment_dir, "config.json"), "w") as f:
         json.dump(args_dict, f, indent=4, sort_keys=True, default=lambda x: x.__name__)
@@ -56,7 +58,10 @@ def main(args):
         pred_y = torch.argmax(logit, dim=1)
         return (pred_y == true_y).sum() / len(true_y)
 
-    loaders = datasets.get_dataset(args.dataset)
+    dataset_args = {}
+    if args.dataset_portion is not None:
+        dataset_args["dataset_portion"] = args.dataset_portion
+    loaders = datasets.get_dataset(args.dataset, **dataset_args)
     num_classes = loaders.get('num_classes', 10)
     model = models.get_model(args.model, num_classes=num_classes).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)

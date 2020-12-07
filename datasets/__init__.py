@@ -40,7 +40,7 @@ def get_svhn_loaders(use_half_train=False):
             "test_loader": test_loader}
 
 
-def get_cifar10_loaders(use_half_train=False):
+def get_cifar10_loaders(use_half_train=False, dataset_portion=None):
     normalize_transform = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     train_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
     test_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
@@ -51,8 +51,10 @@ def get_cifar10_loaders(use_half_train=False):
                                              train=False, transform=test_transform, download=True)
 
     if use_half_train:
+        dataset_portion = 0.5
+    if dataset_portion:
         dataset_size = len(original_train_dataset)
-        split = int(np.floor(0.5 * dataset_size))
+        split = int(np.floor(dataset_portion * dataset_size))
         original_train_dataset, _ = random_split(original_train_dataset, [dataset_size - split, split])
 
     loader_args = {
@@ -74,7 +76,7 @@ def get_cifar10_loaders(use_half_train=False):
             "test_loader": test_loader}
 
 
-def get_cifar100_loaders(use_half_train=False):
+def get_cifar100_loaders(use_half_train=False, dataset_portion=None):
     normalize_transform = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     train_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
     test_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
@@ -85,8 +87,10 @@ def get_cifar100_loaders(use_half_train=False):
                                               train=False, transform=test_transform, download=True)
 
     if use_half_train:
+        dataset_portion = 0.5
+    if dataset_portion:
         dataset_size = len(original_train_dataset)
-        split = int(np.floor(0.5 * dataset_size))
+        split = int(np.floor(dataset_portion * dataset_size))
         original_train_dataset, _ = random_split(original_train_dataset, [dataset_size - split, split])
 
     loader_args = {
