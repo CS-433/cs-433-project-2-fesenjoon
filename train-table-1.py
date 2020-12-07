@@ -22,7 +22,7 @@ def build_parser():
 #     parser.add_argument('--dataset', type=str, default='cifar10', choices=datasets.get_available_datasets())
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--convergence-epochs', type=int, default=3) # If the minimum val loss does not decrease in 3 epochs training will stop
-    parser.add_argument('--convergence-accuracy-change-threshold', type=float, default=0.005)
+    parser.add_argument('--convergence-accuracy-change-threshold', type=float, default=0.002)
 #     parser.add_argument('--split-size', type=int, default=5000)
     parser.add_argument('--random-seed', type=int, default=42)
 #     parser.add_argument('--save-per-epoch', action='store_true', default=False)
@@ -129,27 +129,28 @@ def main(args):
                 else:
                     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
             
-                test_accuracies = []
+                train_accuracies = []
                 stop_indicator = False
                 epoch = 0
                 while(not stop_indicator):
                     if epoch % 5 == 0:
                         print(f"\t Training in epoch {epoch + 1}")
                     train_loss, train_accuracy = train_one_epoch(model, optimizer, criterion, loaders['train_loader'])
-                    test_loss, test_accuracy =  eval_on_dataloader(model, loaders['test_loader'])
-                    test_accuracies.append(test_accuracy)
+                    train_loss, train_accuracy = eval_on_dataloader(model, loaders['train_loader'])
+
+                    train_accuracies.append(train_accuracy)
                     epoch += 1
-                    if len(test_accuracies) >= args.convergence_epochs:
-                        if max(test_accuracies) not in test_accuracies[-args.convergence_epochs:]:
-                            print("\tConvergence codition met")
-                            stop_indicator = True
-                        elif np.std(test_accuracies[-args.convergence_epochs:]) < args.convergence_accuracy_change_threshold:
-                            print("\tConvergence codition met")
+                    if train_accuracy >= 0.99:
+                        print("Convergence codition met. Training accuracy > 0.99")
+                        stop_indicator = True
+                    
+                    if len(train_accuracies) >= args.convergence_epochs:
+                        if np.std(train_accuracies[-args.convergence_epochs:]) < args.convergence_accuracy_change_threshold:
+                            print(f"\tConvergence codition met. Training accuracy = {train_accuracy} stopped improving")
                             stop_indicator = True
                             
                         
-                            
-                test_accuracy = test_accuracies[-1]
+                test_loss, test_accuracy =  eval_on_dataloader(model, loaders['test_loader'])
                 print(f"\tTest accuracy = {test_accuracy}")
                 model_result[model_name] = test_accuracy
                 
@@ -185,46 +186,49 @@ def main(args):
                 else:
                     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
             
-                test_accuracies = []
+                train_accuracies = []
                 stop_indicator = False
                 epoch = 0
                 while(not stop_indicator):
                     if epoch % 5 == 0:
                         print(f"\tPre-training in epoch {epoch + 1}")
                     train_loss, train_accuracy = train_one_epoch(model, optimizer, criterion, loaders['train_loader'])
-                    test_loss, test_accuracy =  eval_on_dataloader(model, loaders['test_loader'])
-                    test_accuracies.append(test_accuracy)
+                    train_loss, train_accuracy = eval_on_dataloader(model, loaders['train_loader'])
+                    
+                    train_accuracies.append(train_accuracy)
                     epoch += 1
-                    if len(test_accuracies) >= args.convergence_epochs:
-                        if max(test_accuracies) not in test_accuracies[-args.convergence_epochs:]:
-                            print("\tConvergence codition met")
-                            stop_indicator = True
-                        elif np.std(test_accuracies[-args.convergence_epochs:]) < args.convergence_accuracy_change_threshold:
-                            print("\tConvergence codition met")
+                    if train_accuracy >= 0.99:
+                        print("Convergence codition met. Training accuracy > 0.99")
+                        stop_indicator = True
+                    
+                    if len(train_accuracies) >= args.convergence_epochs:
+                        if np.std(train_accuracies[-args.convergence_epochs:]) < args.convergence_accuracy_change_threshold:
+                            print(f"\tConvergence codition met. Training accuracy = {train_accuracy} stopped improving")
                             stop_indicator = True
                             
                 loaders = datasets.get_dataset(f"{dataset_name}")
                 criterion = torch.nn.CrossEntropyLoss()
-                test_accuracies = []
+                train_accuracies = []
                 stop_indicator = False
                 epoch = 0
                 while(not stop_indicator):
                     if epoch % 5 == 0:
                         print(f"\t Training in epoch {epoch + 1}")
                     train_loss, train_accuracy = train_one_epoch(model, optimizer, criterion, loaders['train_loader'])
-                    test_loss, test_accuracy =  eval_on_dataloader(model, loaders['test_loader'])
-                    test_accuracies.append(test_accuracy)
+                    train_loss, train_accuracy = eval_on_dataloader(model, loaders['train_loader'])
+                    
+                    train_accuracies.append(train_accuracy)
                     epoch += 1
-                    if len(test_accuracies) >= args.convergence_epochs:
-                        if max(test_accuracies) not in test_accuracies[-args.convergence_epochs:]:
-                            print("\tConvergence codition met")
-                            stop_indicator = True
-                        elif np.std(test_accuracies[-args.convergence_epochs:]) < args.convergence_accuracy_change_threshold:
-                            print("\tConvergence codition met")
+                    if train_accuracy >= 0.99:
+                        print("Convergence codition met. Training accuracy > 0.99")
+                        stop_indicator = True
+                    
+                    if len(train_accuracies) >= args.convergence_epochs:
+                        if np.std(train_accuracies[-args.convergence_epochs:]) < args.convergence_accuracy_change_threshold:
+                            print(f"\tConvergence codition met. Training accuracy = {train_accuracy} stopped improving")
                             stop_indicator = True
 
-                            
-                test_accuracy = test_accuracies[-1]
+                test_loss, test_accuracy =  eval_on_dataloader(model, loaders['test_loader'])
                 print(f"\tTest accuracy = {test_accuracy}")
                 model_result[model_name] = test_accuracy
                 
@@ -233,7 +237,7 @@ def main(args):
     overal_result[init_type] = dataset_result
 
                            
-    np.save("table1.npy", overal_result)
+    np.save("tables/table1.npy", overal_result)
                 
 
 if __name__ == "__main__":
