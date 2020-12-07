@@ -23,6 +23,7 @@ def build_parser():
     parser.add_argument('--checkpoint', default=None)
     parser.add_argument('--checkpoint-shrink', default=1.0, type=float)
     parser.add_argument('--checkpoint-perturb', default=0.0, type=float)
+    parser.add_argument('--checkpoint-num-classes', default=None, type=int)
     return parser
 
 
@@ -55,15 +56,22 @@ def main(args):
         pred_y = torch.argmax(logit, dim=1)
         return (pred_y == true_y).sum() / len(true_y)
 
-    model = models.get_model(args.model).to(device)
     loaders = datasets.get_dataset(args.dataset)
+    num_classes = loaders.get('num_classes', 10)
+    model = models.get_model(args.model, num_classes=num_classes).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
     criterion = torch.nn.CrossEntropyLoss()
     summary_writer = SummaryWriter(logdir=experiment_dir)
 
     if args.checkpoint:
+        real_fc = None
+        if args.checkpoint_num_classes is not None and args.checkpoint_num_classes != num_classes:
+            real_fc = model.fc
+            model.fc = torch.nn.Linear(model.fc.in_features, args.checkpoint_num_classes)
         model.load_state_dict(torch.load(args.checkpoint, map_location=device)['model'])
-        dummy_model = models.get_model(args.model).to(device)
+        if real_fc is not None:
+            model.fc = real_fc
+        dummy_model = models.get_model(args.model, num_classes=num_classes).to(device)
         with torch.no_grad():
             for real_parameter, random_parameter in zip(model.parameters(), dummy_model.parameters()):
                 real_parameter.mul_(args.checkpoint_shrink).add_(random_parameter, alpha=args.checkpoint_perturb)
