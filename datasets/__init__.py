@@ -54,7 +54,7 @@ def get_cifar10_loaders(use_half_train=False, dataset_portion=None):
         dataset_portion = 0.5
     if dataset_portion:
         dataset_size = len(original_train_dataset)
-        split = int(np.floor(dataset_portion * dataset_size))
+        split = int(np.floor((1 - dataset_portion) * dataset_size))
         original_train_dataset, _ = random_split(original_train_dataset, [dataset_size - split, split])
 
     loader_args = {
@@ -90,7 +90,7 @@ def get_cifar100_loaders(use_half_train=False, dataset_portion=None):
         dataset_portion = 0.5
     if dataset_portion:
         dataset_size = len(original_train_dataset)
-        split = int(np.floor(dataset_portion * dataset_size))
+        split = int(np.floor((1 - dataset_portion) * dataset_size))
         original_train_dataset, _ = random_split(original_train_dataset, [dataset_size - split, split])
 
     loader_args = {
