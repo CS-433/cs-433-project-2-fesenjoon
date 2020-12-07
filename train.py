@@ -8,7 +8,11 @@ import torch
 
 import models
 import datasets
-from tensorboardX import SummaryWriter
+try:
+    from tensorboardX import SummaryWriter
+except:
+    from torch.utils.tensorboard import SummaryWriter
+
 
 def build_parser():
 
@@ -17,6 +21,8 @@ def build_parser():
     parser.add_argument('--model', type=str, default='resnet18', choices=models.get_available_models())
     parser.add_argument('--dataset', type=str, default='cifar10', choices=datasets.get_available_datasets())
     parser.add_argument('--lr', type=float, default=0.1)
+    parser.add_argument('--mlp-bias', action='store_true', default=False)
+    parser.add_argument('--mlp-activation', type=str, default="relu")
     parser.add_argument('--epochs', type=int, default=200)
     parser.add_argument('--random-seed', type=int, default=42)
     parser.add_argument('--save-per-epoch', action='store_true', default=False)
@@ -54,14 +60,22 @@ def main(args):
 
     def get_accuracy(logit, true_y):
         pred_y = torch.argmax(logit, dim=1)
-        return (pred_y == true_y).sum() / len(true_y)
+        return torch.true_divide((pred_y == true_y).sum(), len(true_y))
 
     loaders = datasets.get_dataset(args.dataset)
     num_classes = loaders.get('num_classes', 10)
-    model = models.get_model(args.model, num_classes=num_classes).to(device)
+    model_args = {}
+    if args.model == 'mlp':
+        model_args['bias'] = args.mlp_bias
+        model_args['activation'] = args.mlp_activation
+        model_args["input_dim"] =  32 * 32 * 3
+    model = models.get_model(args.model, num_classes=num_classes, **model_args).to(device)
     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
     criterion = torch.nn.CrossEntropyLoss()
-    summary_writer = SummaryWriter(logdir=experiment_dir)
+    try:
+        summary_writer = SummaryWriter(logdir=experiment_dir)
+    except:
+        summary_writer = SummaryWriter(experiment_dir)
 
     if args.checkpoint:
         real_fc = None

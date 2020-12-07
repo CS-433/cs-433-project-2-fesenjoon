@@ -7,7 +7,7 @@ import torch.nn.functional as F
 
 
 class MLP(nn.Module):
-    def __init__(self, input_dim, num_classes=10, hidden_units=[100, 100, 100], activation='tanh'):
+    def __init__(self, input_dim, num_classes=10, hidden_units=[100, 100, 100], activation='tanh', bias=True):
         super(MLP, self).__init__()
         assert activation in ['tanh', 'relu']
         if activation == 'tanh':
@@ -20,11 +20,11 @@ class MLP(nn.Module):
         last_dim = input_dim
         self.fcs = []
         for i, n_h in enumerate(hidden_units):
-            self.fcs.append(nn.Linear(last_dim, n_h))
+            self.fcs.append(nn.Linear(last_dim, n_h, bias=bias))
             self.add_module(f"hidden_layer_{i}", self.fcs[-1])
             last_dim = n_h
             
-        self.logit_fc = nn.Linear(last_dim, self.num_classes)
+        self.logit_fc = nn.Linear(last_dim, self.num_classes, bias=bias)
 
     def forward(self, x):
         x = x.view(-1, self.input_dim)

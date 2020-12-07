@@ -17,7 +17,7 @@ except:
 def build_parser():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--title', type=str)
+    parser.add_argument('title', type=str)
 #     parser.add_argument('--model', type=str, default='resnet18', choices=models.get_available_models())
 #     parser.add_argument('--dataset', type=str, default='cifar10', choices=datasets.get_available_datasets())
     parser.add_argument('--lr', type=float, default=0.001)
@@ -25,6 +25,7 @@ def build_parser():
     parser.add_argument('--convergence-accuracy-change-threshold', type=float, default=0.002)
 #     parser.add_argument('--split-size', type=int, default=5000)
     parser.add_argument('--random-seed', type=int, default=42)
+    parser.add_argument('--gpu-id', type=int, default=0)
 #     parser.add_argument('--save-per-epoch', action='store_true', default=False)
     parser.add_argument('--checkpoint', default=None)
     return parser
@@ -49,7 +50,7 @@ def main(args):
 
 
     if torch.cuda.is_available():
-        device = torch.device('cuda:0')
+        device = torch.device(f'cuda:{args.gpu_id}')
         print("CUDA Recognized")
     else:
         device = torch.device('cpu')
@@ -109,7 +110,7 @@ def main(args):
     for (dataset_name, num_classes) in [("cifar10", 10), ("cifar100", 100), ("svhn", 10)]:
         model_args = {
             "resnet18": {"num_classes": num_classes},
-            "mlp": {"input_dim": 32 * 32 * 3, "num_classes": num_classes},
+            "mlp": {"input_dim": 32 * 32 * 3, "num_classes": num_classes, 'activation':'tanh', 'bias':True},
             "logistic": {"input_dim": 32 * 32 * 3, "num_classes": num_classes},
         }
         
@@ -237,7 +238,7 @@ def main(args):
     overal_result[init_type] = dataset_result
 
                            
-    np.save("tables/table1.npy", overal_result)
+    np.save(f"tables/table1-seed{args.random_seed}.npy", overal_result)
                 
 
 if __name__ == "__main__":
