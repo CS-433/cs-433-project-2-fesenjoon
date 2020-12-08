@@ -25,6 +25,7 @@ def build_parser():
     parser.add_argument('--mlp-bias', action='store_true', default=False)
     parser.add_argument('--mlp-activation', type=str, default="relu")
     parser.add_argument('--epochs', type=int, default=200)
+    parser.add_argument('--optimizer', type=str, default='adam', choices=['adam', 'sgd'])
     parser.add_argument('--random-seed', type=int, default=42)
     parser.add_argument('--save-per-epoch', action='store_true', default=False)
     parser.add_argument('--checkpoint', default=None)
@@ -75,7 +76,10 @@ def main(args, experiment_dir=None):
         model_args['activation'] = args.mlp_activation
         model_args["input_dim"] =  32 * 32 * 3
     model = models.get_model(args.model, num_classes=num_classes, **model_args).to(device)
-    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
+    if args.optimizer == 'adam':
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    else:
+        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
     criterion = torch.nn.CrossEntropyLoss()
     try:
         summary_writer = SummaryWriter(logdir=experiment_dir)

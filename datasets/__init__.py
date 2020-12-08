@@ -7,19 +7,22 @@ from torch.utils.data import random_split, ConcatDataset
 from torchvision import transforms, datasets
 
 
-def get_svhn_loaders(use_half_train=False):
-    train_transform = transforms.Compose([transforms.ToTensor()])
+def get_svhn_loaders(use_half_train=False, dataset_portion=None):
+    normalize_transform = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+    train_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
+    test_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
 
-    dataset = datasets.SVHN(root=os.path.join('data', 'svhn_data'),
-                            transform=train_transform, download=True)
-    val_dataset_size = int(len(dataset) / 3)
-    train_dataset_size = len(dataset) - val_dataset_size
-    train_dataset, val_dataset = random_split(dataset, [train_dataset_size, val_dataset_size])
+    original_train_dataset = datasets.SVHN(root=os.path.join('data', 'svhn_data'),
+                                              split='train', transform=train_transform, download=True)
+    original_test_dataset = datasets.SVHN(root=os.path.join('data', 'svhn_data'),
+                                             split='test', transform=test_transform, download=True)
 
     if use_half_train:
-        dataset_size = len(train_dataset)
-        split = int(np.floor(0.5 * dataset_size))
-        train_dataset, _ = random_split(train_dataset, [dataset_size - split, split])
+        dataset_portion = 0.5
+    if dataset_portion:
+        dataset_size = len(original_train_dataset)
+        split = int(np.floor((1 - dataset_portion) * dataset_size))
+        original_train_dataset, _ = random_split(original_train_dataset, [dataset_size - split, split])
 
     loader_args = {
         "batch_size": 128,
@@ -27,12 +30,12 @@ def get_svhn_loaders(use_half_train=False):
     }
 
     train_loader = torch.utils.data.DataLoader(
-        dataset=train_dataset,
+        dataset=original_train_dataset,
         shuffle=True,
         **loader_args)
 
     test_loader = torch.utils.data.DataLoader(
-        dataset=val_dataset,
+        dataset=original_test_dataset,
         shuffle=False,
         **loader_args)
 
