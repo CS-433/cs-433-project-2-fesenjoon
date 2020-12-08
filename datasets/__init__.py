@@ -8,6 +8,7 @@ from torchvision import transforms, datasets
 
 
 def get_svhn_loaders(use_half_train=False, dataset_portion=None):
+    # The normalization shouldn't be too important so for now we use an approximate of channel means
     normalize_transform = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
     train_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
     test_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
