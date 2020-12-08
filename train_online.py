@@ -138,8 +138,9 @@ def main(args):
             summary_writer.add_scalar("train_loss", train_loss, epoch)
             summary_writer.add_scalar("val_accuracy", val_accuracy, epoch)
             summary_writer.add_scalar("val_loss", val_loss, epoch)
-            if len(train_accuracies) >= args.convergence_epochs and \
-                    max(train_accuracies) not in train_accuracies[-args.convergence_epochs:]:
+            #if len(train_accuracies) >= args.convergence_epochs and \
+            #        max(train_accuracies) not in train_accuracies[-args.convergence_epochs:]:
+            if train_accuracy >= 0.99:
                 print("Convergence condition met")
                 break
 
