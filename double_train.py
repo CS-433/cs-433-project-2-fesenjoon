@@ -33,6 +33,9 @@ def main(args):
     args.dataset = args.second_dataset
     args.checkpoint = os.path.join(first_exp_dir, 'final.pt')
     train_main(args, os.path.join(experiment_dir, args.dataset))
+    args.checkpoint_shrink = 1
+    args.checkpoint_perturb = 0
+    train_main(args, os.path.join(experiment_dir, "{}_no_shrink_perturb".format(args.dataset)))
 
 
 if __name__ == "__main__":
