@@ -1,0 +1,12 @@
+\begin{tabular}{cccccccccc}
+                   & RESNET  & RESNET  & \multicolumn{1}{l}{RESNET} & MLP     & MLP     & \multicolumn{1}{l}{MLP}  & LR      & LR      & \multicolumn{1}{l}{LR}   \\ \hline
+\textbf{CIFAR-10}  & SGD     & ADAM    & \multicolumn{1}{l}{MSGD}   & SGD     & ADAM    & \multicolumn{1}{l}{MSGD} & SGD     & ADAM    & \multicolumn{1}{l}{MSGD} \\ \hline
+Random Init        & 1.1.1.1 & 1.1.1.2 & 1.1.1.3                    & 1.1.2.1 & 1.1.2.2 & 1.1.2.3                  & 1.1.3.1 & 1.1.3.2 & 1.1.3.3                  \\
+Warm Start         & 1.2.1.1 & 1.2.1.2 & 1.2.1.3                    & 1.2.2.1 & 1.2.2.2 & 1.2.2.3                  & 1.2.3.1 & 1.2.3.2 & 1.2.3.3                  \\
+\textbf{SVHN}      &         &         & \multicolumn{1}{l}{}       &         &         & \multicolumn{1}{l}{}     &         &         & \multicolumn{1}{l}{}     \\ \hline
+Random Init        & 2.1.1.1 & 2.1.1.2 & 2.1.1.3                    & 2.1.2.1 & 2.1.2.2 & 2.1.2.3                  & 2.1.3.1 & 2.1.3.2 & 2.1.3.3                  \\
+Warm Start         & 2.2.1.1 & 2.2.1.2 & 2.2.1.3                    & 2.2.2.1 & 2.2.2.2 & 2.2.2.3                  & 2.2.3.1 & 2.2.3.2 & 2.2.3.3                  \\
+\textbf{CIFAR-100} &         &         &                            &         &         &                          &         &         &                          \\ \hline
+Random Init        & 3.1.1.1 & 3.1.1.2 & 3.1.1.3                    & 3.1.2.1 & 3.1.2.2 & 3.1.2.3                  & 3.1.3.1 & 3.1.3.2 & 3.1.3.3                  \\
+Warm Start         & 3.2.1.1 & 3.2.1.2 & 3.2.1.3                    & 3.2.2.1 & 3.2.2.2 & 3.2.2.3                  & 3.2.3.1 & 3.2.3.2 & 3.2.3.3                 
+\end{tabular}
