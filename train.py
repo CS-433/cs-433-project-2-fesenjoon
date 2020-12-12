@@ -25,7 +25,7 @@ def build_parser():
     parser.add_argument('--mlp-bias', action='store_true', default=False)
     parser.add_argument('--mlp-activation', type=str, default="relu")
     parser.add_argument('--epochs', type=int, default=200)
-    parser.add_argument('--optimizer', type=str, default='adam', choices=['adam', 'sgd'])
+    parser.add_argument('--optimizer', type=str, default='sgd', choices=['adam', 'sgd'])
     parser.add_argument('--random-seed', type=int, default=42)
     parser.add_argument('--save-per-epoch', action='store_true', default=False)
     parser.add_argument('--checkpoint', default=None)
