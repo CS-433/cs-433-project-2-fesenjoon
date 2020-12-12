@@ -17,39 +17,15 @@ except:
 def build_parser():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('title', type=str)
-    parser.add_argument('--model', type=str, default='resnet18', choices=models.get_available_models())
-    parser.add_argument('--dataset', type=str, default='cifar10', choices=datasets.get_available_datasets())
-    parser.add_argument('--dataset-portion', type=float, required=False, default=None)
-    parser.add_argument('--lr', type=float, default=0.1)
-    parser.add_argument('--mlp-bias', action='store_true', default=False)
-    parser.add_argument('--mlp-activation', type=str, default="relu")
-    parser.add_argument('--epochs', type=int, default=200)
-    parser.add_argument('--optimizer', type=str, default='adam', choices=['adam', 'sgd'])
-    parser.add_argument('--random-seed', type=int, default=42)
-    parser.add_argument('--save-per-epoch', action='store_true', default=False)
-    parser.add_argument('--checkpoint', default=None)
-    parser.add_argument('--checkpoint-shrink', default=1.0, type=float)
-    parser.add_argument('--checkpoint-perturb', default=0.0, type=float)
-    parser.add_argument('--checkpoint-num-classes', default=None, type=int)
+    parser.add_argument('--exp-dir', default=None)
     return parser
 
 
-def main(args, experiment_dir=None):
-    print("Running with arguments:")
-    args_dict = {}
-    for key in vars(args):
-        if key == "default_function":
-            continue
-        args_dict[key] = getattr(args, key)
-        print(key, ": ", args_dict[key])
-    print("---")
+def main(args):
 
-    if experiment_dir is None:
-        experiment_dir = os.path.join('exp', args.title, datetime.now().strftime('%b%d_%H-%M-%S'))
-    os.makedirs(experiment_dir)
-    with open(os.path.join(experiment_dir, "config.json"), "w") as f:
-        json.dump(args_dict, f, indent=4, sort_keys=True, default=lambda x: x.__name__)
+    with open(os.path.join(args.exp_dir, 'config.json')) as f:
+        args.__dict__.setdefault(json.load(f))
+
 
     # Set the seed
     torch.manual_seed(args.random_seed)
@@ -76,80 +52,23 @@ def main(args, experiment_dir=None):
         model_args['activation'] = args.mlp_activation
         model_args["input_dim"] =  32 * 32 * 3
     model = models.get_model(args.model, num_classes=num_classes, **model_args).to(device)
-    if args.optimizer == 'adam':
-        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
-    else:
-        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
+    model.load_state_dict(torch.load(os.path.join(args.exp_dir, 'final.pt'), map_location=device)['model'])
     criterion = torch.nn.CrossEntropyLoss()
-    try:
-        summary_writer = SummaryWriter(logdir=experiment_dir)
-    except:
-        summary_writer = SummaryWriter(experiment_dir)
+    accuracies = []
+    losses = []
+    for batch_idx, (data_x, data_y) in enumerate(loaders["test_loader"]):
+        data_x = data_x.to(device)
+        data_y = data_y.to(device)
 
-    if args.checkpoint:
-        real_fc = None
-        if args.checkpoint_num_classes is not None and args.checkpoint_num_classes != num_classes:
-            real_fc = model.fc
-            model.fc = torch.nn.Linear(model.fc.in_features, args.checkpoint_num_classes)
-        model.load_state_dict(torch.load(args.checkpoint, map_location=device)['model'])
-        if real_fc is not None:
-            model.fc = real_fc
-        dummy_model = models.get_model(args.model, num_classes=num_classes).to(device)
-        with torch.no_grad():
-            for real_parameter, random_parameter in zip(model.parameters(), dummy_model.parameters()):
-                real_parameter.mul_(args.checkpoint_shrink).add_(random_parameter, alpha=args.checkpoint_perturb)
+        model_y = model(data_x)
+        loss = criterion(model_y, data_y)
+        batch_accuracy = get_accuracy(model_y, data_y)
 
-    for epoch in range(1, args.epochs + 1):
-        print(f"Epoch {epoch}")
-        accuracies = []
-        losses = []
-        for batch_idx, (data_x, data_y) in enumerate(loaders["train_loader"]):
-            data_x = data_x.to(device)
-            data_y = data_y.to(device)
-
-            optimizer.zero_grad()
-            model_y = model(data_x)
-            loss = criterion(model_y, data_y)
-            batch_accuracy = get_accuracy(model_y, data_y)
-            loss.backward()
-            optimizer.step()
-
-            accuracies.append(batch_accuracy.item())
-            losses.append(loss.item())
-
-        train_loss = np.mean(losses)
-        train_accuracy = np.mean(accuracies)
-        print("Train accuracy: {} Train loss: {}".format(train_accuracy, train_loss))
-        summary_writer.add_scalar("train_loss", train_loss, epoch)
-        summary_writer.add_scalar("train_accuracy", train_accuracy, epoch)
-
-        accuracies = []
-        losses = []
-        for batch_idx, (data_x, data_y) in enumerate(loaders["test_loader"]):
-            data_x = data_x.to(device)
-            data_y = data_y.to(device)
-
-            model_y = model(data_x)
-            loss = criterion(model_y, data_y)
-            batch_accuracy = get_accuracy(model_y, data_y)
-
-            accuracies.append(batch_accuracy.item())
-            losses.append(loss.item())
-
-        test_loss = np.mean(losses)
-        test_accuracy = np.mean(accuracies)
-        print("Test accuracy: {} Test loss: {}".format(test_accuracy, test_loss))
-        summary_writer.add_scalar("test_loss", test_loss, epoch)
-        summary_writer.add_scalar("test_accuracy", test_accuracy, epoch)
-
-        if args.save_per_epoch:
-            torch.save({
-                'model': model.state_dict()
-            }, os.path.join(experiment_dir, f'chkpt_epoch{epoch}.pt'))
-
-    torch.save({
-        'model': model.state_dict()
-    }, os.path.join(experiment_dir, 'final.pt'))
+        accuracies.append(batch_accuracy.item())
+        losses.append(loss.item())
+    test_loss = np.mean(losses)
+    test_accuracy = np.mean(accuracies)
+    print("Test accuracy: {} Test loss: {}".format(test_accuracy, test_loss))
 
 
 if __name__ == "__main__":
