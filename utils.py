@@ -12,6 +12,7 @@ def get_data_for_runs(runs, exp_dir=os.path.join(root_dir, "exp")):
         run_dir = os.path.join(exp_dir, run_dir)
         for file in os.listdir(run_dir):
             if "events.out" in file:
+                #print(file)
                 if title not in summaries:
                     summaries[title] = []
                 summaries[title].append(os.path.join(run_dir, file))
@@ -20,7 +21,7 @@ def get_data_for_runs(runs, exp_dir=os.path.join(root_dir, "exp")):
     for i, title in enumerate(summaries):
         for summary_path in summaries[title]:
             try:
-                for summary in tf.train.summary_iterator(summary_path):
+                for summary in tf.compat.v1.train.summary_iterator(summary_path):
                     for v in summary.summary.value:
                         if v.tag not in datas:
                             datas[v.tag] = [list() for _ in range(len(summaries))]
