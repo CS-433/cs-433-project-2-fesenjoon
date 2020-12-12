@@ -151,7 +151,6 @@ def main(args, experiment_dir=None):
         'model': model.state_dict()
     }, os.path.join(experiment_dir, 'final.pt'))
 
-    summary_writer.close()
 
 if __name__ == "__main__":
     parser = build_parser()
