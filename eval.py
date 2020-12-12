@@ -24,7 +24,7 @@ def build_parser():
 def main(args):
 
     with open(os.path.join(args.exp_dir, 'config.json')) as f:
-        args.__dict__.setdefault(json.load(f))
+        args.__dict__.update(json.load(f))
 
 
     # Set the seed
