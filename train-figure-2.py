@@ -17,17 +17,14 @@ except:
 def build_parser():
 
     parser = argparse.ArgumentParser()
-    parser.add_argument('--title', type=str)
+    parser.add_argument('title', type=str)
     parser.add_argument('--model', type=str, default='resnet18', choices=models.get_available_models())
-#     parser.add_argument('--dataset', type=str, default='cifar10', choices=datasets.get_available_datasets())
+    parser.add_argument('--dataset', type=str, default='cifar10', choices=['cifar10', 'svhn'])
     parser.add_argument('--lr', type=float, default=0.001)
-    parser.add_argument('--convergence-epochs', type=int, default=3) # If the minimum val loss does not decrease in 3 epochs training will stop
-    parser.add_argument('--convergence-accuracy-change-threshold', type=float, default=0.002)
+    parser.add_argument('--acc-threshold', type=float, default=0.99)
 
     parser.add_argument('--split-size', type=int, default=5000)
     parser.add_argument('--random-seed', type=int, default=42)
-#     parser.add_argument('--save-per-epoch', action='store_true', default=False)
-    parser.add_argument('--checkpoint', default=None)
     return parser
 
 
@@ -109,7 +106,7 @@ def main(args):
     np.random.seed(args.random_seed)
     model = models.get_model(args.model).to(device)
     criterion = torch.nn.CrossEntropyLoss()
-    loaders = datasets.get_dataset("online_with_val_cifar10", split_size=args.split_size)
+    loaders = datasets.get_dataset(f"online_with_val_{args.dataset}", split_size=args.split_size)
     number_of_samples_online = []
     test_accuracies_online = []
     training_times_online = []
@@ -131,13 +128,10 @@ def main(args):
             train_accuracies.append(train_accuracy)
             epoch += 1
             
-            if train_accuracy >= 0.99:
-                print("Convergence codition met. Training accuracy > 0.99")
+            if train_accuracy >= args.acc_threshold:
+                print(f"Convergence codition met. Training accuracy > {100 * args.acc_threshold}")
                 stop_indicator = True
-            if len(train_accuracies) >= args.convergence_epochs:
-                if np.std(train_accuracies[-args.convergence_epochs:]) < args.convergence_accuracy_change_threshold:
-                    print(f"\tConvergence codition met. Training accuracy = {train_accuracy} stopped improving")
-                    stop_indicator = True
+
 
                     
         t_end = datetime.now()
@@ -167,14 +161,11 @@ def main(args):
         # Set the seed
         torch.manual_seed(args.random_seed)
         np.random.seed(args.random_seed)
-        loaders = datasets.get_dataset("partial_with_val_cifar10", n_train)
+        loaders = datasets.get_dataset(f"partial_with_val_{args.dataset}", n_train)
         model = models.get_model(args.model).to(device)
         optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
         criterion = torch.nn.CrossEntropyLoss()
 
-
-        if args.checkpoint:
-            model.load_state_dict(torch.load(args.checkpoint, map_location=device)['model'])
             
         train_accuracies = []
         stop_indicator = False
@@ -188,13 +179,10 @@ def main(args):
             train_accuracies.append(train_accuracy)
             epoch += 1
             
-            if train_accuracy >= 0.99:
-                print("Convergence codition met. Training accuracy > 0.99")
+            if train_accuracy >= args.acc_threshold:
+                print(f"Convergence codition met. Training accuracy > {100 * args.acc_threshold}")
                 stop_indicator = True
-            if len(train_accuracies) >= args.convergence_epochs:
-                if np.std(train_accuracies[-args.convergence_epochs:]) < args.convergence_accuracy_change_threshold:
-                    print(f"\tConvergence codition met. Training accuracy = {train_accuracy} stopped improving")
-                    stop_indicator = True
+
             
                     
         t_end = datetime.now()
@@ -213,19 +201,20 @@ def main(args):
     number_of_samples_offline = np.array(number_of_samples_offline) / 1000
     axs[0].plot(number_of_samples_online, test_accuracies_online, label='warm start', color='C0')
     axs[0].plot(number_of_samples_offline, test_accuracies_offline, label='random', color='C1')
-    axs[0].set_ylabel("Tetst Accuracy")
+    axs[0].set_ylabel("Tets Accuracy")
     axs[0].set_xlabel("Number of Samples (thousands)")
     axs[1].plot(number_of_samples_online, training_times_online, label='warm start', color='C0')
     axs[1].plot(number_of_samples_offline, training_times_offline, label='random', color='C1')
     axs[1].set_ylabel("Train Time (seconds)")
     axs[1].set_xlabel("Number of Samples (thousands)")
-    plt.savefig("figures/figure2.pdf")
-    np.save("tables/figure2.npy", {
-        "test_acc_online": test_accuracies_online,
-        "test_acc_offline": test_accuracies_offline,
-        "train_time_online": training_times_online,
-        "train_time_offline": training_times_offline
-    })
+    plt.legend()
+    plt.savefig(f"figures/figure2-{args.dataset}-{100 * args.acc_threshold}.pdf")
+#     np.save(f"tables/figure2-{args.dataset}-{100 * args.acc_threshold}.npy", {
+#         "test_acc_online": test_accuracies_online,
+#         "test_acc_offline": test_accuracies_offline,
+#         "train_time_online": training_times_online,
+#         "train_time_offline": training_times_offline
+#     })
             
             
             
