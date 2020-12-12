@@ -27,7 +27,7 @@ def build_parser():
     parser.add_argument('--epochs', type=int, default=200)
     parser.add_argument('--optimizer', type=str, default='sgd', choices=['adam', 'sgd'])
     parser.add_argument('--random-seed', type=int, default=42)
-    parser.add_argument('--save-per-epoch', action='store_true', default=False)
+    parser.add_argument('--save-per-epoch', default=None, type=int)
     parser.add_argument('--checkpoint', default=None)
     parser.add_argument('--checkpoint-shrink', default=1.0, type=float)
     parser.add_argument('--checkpoint-perturb', default=0.0, type=float)
@@ -143,9 +143,10 @@ def main(args, experiment_dir=None):
         summary_writer.add_scalar("test_accuracy", test_accuracy, epoch)
 
         if args.save_per_epoch:
-            torch.save({
-                'model': model.state_dict()
-            }, os.path.join(experiment_dir, f'chkpt_epoch{epoch}.pt'))
+            if epoch % args.save_per_epoch == 0:
+                torch.save({
+                    'model': model.state_dict()
+                }, os.path.join(experiment_dir, f'chkpt_epoch{epoch}.pt'))
 
     torch.save({
         'model': model.state_dict()
