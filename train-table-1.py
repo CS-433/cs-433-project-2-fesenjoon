@@ -18,15 +18,11 @@ def build_parser():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('title', type=str)
-#     parser.add_argument('--model', type=str, default='resnet18', choices=models.get_available_models())
-#     parser.add_argument('--dataset', type=str, default='cifar10', choices=datasets.get_available_datasets())
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--convergence-epochs', type=int, default=3) # If the minimum val loss does not decrease in 3 epochs training will stop
     parser.add_argument('--convergence-accuracy-change-threshold', type=float, default=0.002)
-#     parser.add_argument('--split-size', type=int, default=5000)
     parser.add_argument('--random-seed', type=int, default=42)
     parser.add_argument('--gpu-id', type=int, default=0)
-#     parser.add_argument('--save-per-epoch', action='store_true', default=False)
     parser.add_argument('--checkpoint', default=None)
     return parser
 
@@ -106,7 +102,6 @@ def main(args):
     overal_result = {}
     init_type = "random"
     dataset_result = {}
-    
     for (dataset_name, num_classes) in [("cifar10", 10), ("cifar100", 100), ("svhn", 10)]:
         model_args = {
             "resnet18": {"num_classes": num_classes},
@@ -115,7 +110,7 @@ def main(args):
         }
         
         optimizer_result = {}
-        for optimizer_name in ["adam", "sgd"]:
+        for optimizer_name in ["adam", "sgd", "sgd-momentum"]:
             model_result = {}
             for model_name in ["mlp", "logistic", "resnet18"]:
                 print(f"Training model {model_name} on {dataset_name} with {optimizer_name} optimizer.")
@@ -127,6 +122,8 @@ def main(args):
 
                 if optimizer_name == "adam":
                     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+                elif optimizer_name == "sgd-momentum":
+                    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9)
                 else:
                     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
             
@@ -135,7 +132,7 @@ def main(args):
                 epoch = 0
                 while(not stop_indicator):
                     if epoch % 5 == 0:
-                        print(f"\t Training in epoch {epoch + 1}")
+                        print(f"\t Training in epoch {epoch + 1} \t")
                     train_loss, train_accuracy = train_one_epoch(model, optimizer, criterion, loaders['train_loader'])
                     train_loss, train_accuracy = eval_on_dataloader(model, loaders['train_loader'])
 
@@ -163,7 +160,6 @@ def main(args):
     # Training with warm-start
     init_type = "warm-start"
     dataset_result = {}
-    
     for (dataset_name, num_classes) in [("cifar10", 10), ("cifar100", 100), ("svhn", 10)]:
         model_args = {
             "resnet18": {"num_classes": num_classes},
@@ -172,7 +168,7 @@ def main(args):
         }
         
         optimizer_result = {}
-        for optimizer_name in ["adam", "sgd"]:
+        for optimizer_name in ["adam", "sgd", "sgd-momentum"]:
             model_result = {}
             for model_name in ["mlp", "logistic", "resnet18"]:
                 print(f"Training model {model_name} on half of {dataset_name} with {optimizer_name} optimizer.")
@@ -184,9 +180,11 @@ def main(args):
 
                 if optimizer_name == "adam":
                     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+                elif optimizer_name == "sgd-momentum":
+                    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9)
                 else:
                     optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
-            
+                    
                 train_accuracies = []
                 stop_indicator = False
                 epoch = 0
@@ -238,7 +236,7 @@ def main(args):
     overal_result[init_type] = dataset_result
 
                            
-    np.save(f"tables/table1-seed{args.random_seed}.npy", overal_result)
+    np.save(f"tables/table1-svhn-seed{args.random_seed}.npy", overal_result)
                 
 
 if __name__ == "__main__":

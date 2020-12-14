@@ -18,6 +18,7 @@ def build_parser():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('title', type=str)
+    parser.add_argument('--exp-dir', type=str, default=None)
     parser.add_argument('--model', type=str, default='resnet18', choices=models.get_available_models())
     parser.add_argument('--dataset', type=str, default='cifar10', choices=datasets.get_available_datasets())
     parser.add_argument('--dataset-portion', type=float, required=False, default=None)
@@ -26,11 +27,12 @@ def build_parser():
     parser.add_argument('--mlp-bias', action='store_true', default=False)
     parser.add_argument('--mlp-activation', type=str, default="relu")
     parser.add_argument('--epochs', type=int, default=200)
-    parser.add_argument('--optimizer', type=str, default='sgd', choices=['adam', 'sgd'])
-    parser.add_argument('--random-seed', type=int, default=42)
-    parser.add_argument('--save-per-epoch', action='store_true', default=False)
     parser.add_argument('--grad-track', action='store_true', default=False)
     parser.add_argument('--data-aug', action='store_true', default=False)
+    parser.add_argument('--weight-decay', type=float, default=0)
+    parser.add_argument('--optimizer', type=str, default='sgd', choices=['adam', 'sgd'])
+    parser.add_argument('--random-seed', type=int, default=42)
+    parser.add_argument('--save-per-epoch', default=None, type=int)
     parser.add_argument('--checkpoint', default=None)
     parser.add_argument('--checkpoint-shrink', default=1.0, type=float)
     parser.add_argument('--checkpoint-perturb', default=0.0, type=float)
@@ -49,8 +51,11 @@ def main(args, experiment_dir=None):
     print("---")
 
     if experiment_dir is None:
-        experiment_dir = os.path.join('exp', args.title, datetime.now().strftime('%b%d_%H-%M-%S'))
-    os.makedirs(experiment_dir)
+        if args.exp_dir is not None:
+            experiment_dir = args.exp_dir
+        else:
+            experiment_dir = os.path.join('exp', args.title, datetime.now().strftime('%b%d_%H-%M-%S'))
+    os.makedirs(experiment_dir, exist_ok=True)
     with open(os.path.join(experiment_dir, "config.json"), "w") as f:
         json.dump(args_dict, f, indent=4, sort_keys=True, default=lambda x: x.__name__)
 
@@ -84,9 +89,9 @@ def main(args, experiment_dir=None):
     model = models.get_model(args.model, num_classes=num_classes, **model_args).to(device)
 
     if args.optimizer == 'adam':
-        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
     else:
-        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
+        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
     if args.lr_schedule:
         def lambda1(epoch):
@@ -176,9 +181,10 @@ def main(args, experiment_dir=None):
             scheduler.step()
 
         if args.save_per_epoch:
-            torch.save({
-                'model': model.state_dict()
-            }, os.path.join(experiment_dir, f'chkpt_epoch{epoch}.pt'))
+            if epoch % args.save_per_epoch == 0:
+                torch.save({
+                    'model': model.state_dict()
+                }, os.path.join(experiment_dir, f'chkpt_epoch{epoch}.pt'))
 
     torch.save({
         'model': model.state_dict()

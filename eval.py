@@ -8,10 +8,7 @@ import torch
 
 import models
 import datasets
-try:
-    from tensorboardX import SummaryWriter
-except:
-    from torch.utils.tensorboard import SummaryWriter
+from tensorboardX import SummaryWriter
 
 
 def build_parser():
@@ -24,7 +21,7 @@ def build_parser():
 def main(args):
 
     with open(os.path.join(args.exp_dir, 'config.json')) as f:
-        args.__dict__.setdefault(json.load(f))
+        args.__dict__.update(json.load(f))
 
 
     # Set the seed
@@ -51,24 +48,32 @@ def main(args):
         model_args['bias'] = args.mlp_bias
         model_args['activation'] = args.mlp_activation
         model_args["input_dim"] =  32 * 32 * 3
-    model = models.get_model(args.model, num_classes=num_classes, **model_args).to(device)
-    model.load_state_dict(torch.load(os.path.join(args.exp_dir, 'final.pt'), map_location=device)['model'])
     criterion = torch.nn.CrossEntropyLoss()
-    accuracies = []
-    losses = []
-    for batch_idx, (data_x, data_y) in enumerate(loaders["test_loader"]):
-        data_x = data_x.to(device)
-        data_y = data_y.to(device)
+    summary_writer = SummaryWriter(args.exp_dir)
+    checkpoints = {i: os.path.join(args.exp_dir, 'chkpt_epoch{}.pt'.format(i)) for i in range(1, args.epochs + 1)}
+    checkpoints = {i: checkpoints[i] for i in checkpoints if os.path.exists(checkpoints[i])}
+    checkpoints[args.epochs] = os.path.join(args.exp_dir, 'final.pt')
+    for epoch, checkpoint in checkpoints.items():
+        model = models.get_model(args.model, num_classes=num_classes, **model_args).to(device)
+        model.load_state_dict(torch.load(checkpoint, map_location=device)['model'])
 
-        model_y = model(data_x)
-        loss = criterion(model_y, data_y)
-        batch_accuracy = get_accuracy(model_y, data_y)
+        accuracies = []
+        losses = []
+        for batch_idx, (data_x, data_y) in enumerate(loaders["test_loader"]):
+            data_x = data_x.to(device)
+            data_y = data_y.to(device)
 
-        accuracies.append(batch_accuracy.item())
-        losses.append(loss.item())
-    test_loss = np.mean(losses)
-    test_accuracy = np.mean(accuracies)
-    print("Test accuracy: {} Test loss: {}".format(test_accuracy, test_loss))
+            model_y = model(data_x)
+            loss = criterion(model_y, data_y)
+            batch_accuracy = get_accuracy(model_y, data_y)
+
+            accuracies.append(batch_accuracy.item())
+            losses.append(loss.item())
+        test_loss = np.mean(losses)
+        test_accuracy = np.mean(accuracies)
+        print("Epoch {} Test accuracy: {} Test loss: {}".format(epoch, test_accuracy, test_loss))
+        summary_writer.add_scalar("test_loss", test_loss, epoch)
+        summary_writer.add_scalar("test_accuracy", test_accuracy, epoch)
 
 
 if __name__ == "__main__":
