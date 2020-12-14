@@ -18,6 +18,7 @@ def build_parser():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('title', type=str)
+    parser.add_argument('--exp-dir', type=str, default=None)
     parser.add_argument('--model', type=str, default='resnet18', choices=models.get_available_models())
     parser.add_argument('--dataset', type=str, default='cifar10', choices=datasets.get_available_datasets())
     parser.add_argument('--dataset-portion', type=float, required=False, default=None)
@@ -46,8 +47,11 @@ def main(args, experiment_dir=None):
     print("---")
 
     if experiment_dir is None:
-        experiment_dir = os.path.join('exp', args.title, datetime.now().strftime('%b%d_%H-%M-%S'))
-    os.makedirs(experiment_dir)
+        if args.exp_dir is not None:
+            experiment_dir = args.exp_dir
+        else:
+            experiment_dir = os.path.join('exp', args.title, datetime.now().strftime('%b%d_%H-%M-%S'))
+    os.makedirs(experiment_dir, exist_ok=True)
     with open(os.path.join(experiment_dir, "config.json"), "w") as f:
         json.dump(args_dict, f, indent=4, sort_keys=True, default=lambda x: x.__name__)
 
