@@ -8,7 +8,11 @@ import torch
 
 import models
 import datasets
-from tensorboardX import SummaryWriter
+try:
+    from tensorboardX import SummaryWriter
+except:
+    from torch.utils.tensorboard import SummaryWriter
+
 
 def build_parser():
 
@@ -16,9 +20,13 @@ def build_parser():
     parser.add_argument('title', type=str)
     parser.add_argument('--model', type=str, default='resnet18', choices=models.get_available_models())
     parser.add_argument('--dataset', type=str, default='cifar10', choices=datasets.get_available_datasets())
+    parser.add_argument('--dataset-portion', type=float, required=False, default=None)
     parser.add_argument('--lr', type=float, default=0.1)
     parser.add_argument('--lr-schedule', action='store_true', default=False)
+    parser.add_argument('--mlp-bias', action='store_true', default=False)
+    parser.add_argument('--mlp-activation', type=str, default="relu")
     parser.add_argument('--epochs', type=int, default=200)
+    parser.add_argument('--optimizer', type=str, default='sgd', choices=['adam', 'sgd'])
     parser.add_argument('--random-seed', type=int, default=42)
     parser.add_argument('--save-per-epoch', action='store_true', default=False)
     parser.add_argument('--grad-track', action='store_true', default=False)
@@ -26,10 +34,11 @@ def build_parser():
     parser.add_argument('--checkpoint', default=None)
     parser.add_argument('--checkpoint-shrink', default=1.0, type=float)
     parser.add_argument('--checkpoint-perturb', default=0.0, type=float)
+    parser.add_argument('--checkpoint-num-classes', default=None, type=int)
     return parser
 
 
-def main(args):
+def main(args, experiment_dir=None):
     print("Running with arguments:")
     args_dict = {}
     for key in vars(args):
@@ -39,7 +48,8 @@ def main(args):
         print(key, ": ", args_dict[key])
     print("---")
 
-    experiment_dir = os.path.join('exp', args.title, datetime.now().strftime('%b%d_%H-%M-%S'))
+    if experiment_dir is None:
+        experiment_dir = os.path.join('exp', args.title, datetime.now().strftime('%b%d_%H-%M-%S'))
     os.makedirs(experiment_dir)
     with open(os.path.join(experiment_dir, "config.json"), "w") as f:
         json.dump(args_dict, f, indent=4, sort_keys=True, default=lambda x: x.__name__)
@@ -56,11 +66,28 @@ def main(args):
 
     def get_accuracy(logit, true_y):
         pred_y = torch.argmax(logit, dim=1)
-        return (pred_y == true_y).sum() / len(true_y)
+        return torch.true_divide((pred_y == true_y).sum(), len(true_y))
 
-    model = models.get_model(args.model).to(device)
-    loaders = datasets.get_dataset(args.dataset, data_aug=args.data_aug)
-    optimizer = torch.optim.SGD(model.parameters(), lr=args.lr, momentum=0.9)
+    #loaders = datasets.get_dataset(args.dataset)
+    dataset_args = {}
+    if args.dataset_portion is not None:
+        dataset_args["dataset_portion"] = args.dataset_portion
+    loaders = datasets.get_dataset(args.dataset, data_aug=args.data_aug, **dataset_args)
+    num_classes = loaders.get('num_classes', 10)
+    model_args = {}
+
+    if args.model == 'mlp':
+        model_args['bias'] = args.mlp_bias
+        model_args['activation'] = args.mlp_activation
+        model_args["input_dim"] =  32 * 32 * 3
+
+    model = models.get_model(args.model, num_classes=num_classes, **model_args).to(device)
+
+    if args.optimizer == 'adam':
+        optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    else:
+        optimizer = torch.optim.SGD(model.parameters(), lr=args.lr)
+
     if args.lr_schedule:
         def lambda1(epoch):
             if epoch / args.epochs < 0.33:
@@ -71,18 +98,29 @@ def main(args):
                 return args.lr * 0.01
             
         scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_lambda=lambda1)
+
     criterion = torch.nn.CrossEntropyLoss()
-    summary_writer = SummaryWriter(logdir=experiment_dir)
+    try:
+        summary_writer = SummaryWriter(logdir=experiment_dir)
+    except:
+        summary_writer = SummaryWriter(experiment_dir)
 
     if args.checkpoint:
+        real_fc = None
+        if args.checkpoint_num_classes is not None and args.checkpoint_num_classes != num_classes:
+            real_fc = model.fc
+            model.fc = torch.nn.Linear(model.fc.in_features, args.checkpoint_num_classes)
         model.load_state_dict(torch.load(args.checkpoint, map_location=device)['model'])
     
-    dummy_model = models.get_model(args.model).to(device)
-    with torch.no_grad():
-        for real_parameter, random_parameter in zip(model.parameters(), dummy_model.parameters()):
-            real_parameter.mul_(args.checkpoint_shrink).add_(random_parameter, alpha=args.checkpoint_perturb)
+        if real_fc is not None:
+            model.fc = real_fc
+        dummy_model = models.get_model(args.model, num_classes=num_classes).to(device)
+        with torch.no_grad():
+            for real_parameter, random_parameter in zip(model.parameters(), dummy_model.parameters()):
+                real_parameter.mul_(args.checkpoint_shrink).add_(random_parameter, alpha=args.checkpoint_perturb)
 
     for epoch in range(1, args.epochs + 1):
+        model.train()
         print(f"Epoch {epoch}")
         accuracies = []
         losses = []
@@ -106,8 +144,7 @@ def main(args):
             optimizer.step()
             accuracies.append(batch_accuracy.item())
             losses.append(loss.item())
-            if args.lr_schedule:
-                scheduler.step()
+
 
         train_loss = np.mean(losses)
         train_accuracy = np.mean(accuracies)
@@ -117,6 +154,7 @@ def main(args):
 
         accuracies = []
         losses = []
+        model.eval()
         for batch_idx, (data_x, data_y) in enumerate(loaders["test_loader"]):
             data_x = data_x.to(device)
             data_y = data_y.to(device)
@@ -133,6 +171,9 @@ def main(args):
         print("Test accuracy: {} Test loss: {}".format(test_accuracy, test_loss))
         summary_writer.add_scalar("test_loss", test_loss, epoch)
         summary_writer.add_scalar("test_accuracy", test_accuracy, epoch)
+        
+        if args.lr_schedule:
+            scheduler.step()
 
         if args.save_per_epoch:
             torch.save({
@@ -143,6 +184,7 @@ def main(args):
         'model': model.state_dict()
     }, os.path.join(experiment_dir, 'final.pt'))
 
+    summary_writer.close()
 
 if __name__ == "__main__":
     parser = build_parser()
