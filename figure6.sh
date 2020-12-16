@@ -1,10 +1,10 @@
-python3 train.py resnet18-cifar10-figure6 --model resnet18 --dataset cifar10 --epochs $1 --lr 0.1 --exp-dir exp/resnet18-cifar10-figure6
+python3 train.py resnet18-cifar10-figure6 --model resnet18 --dataset cifar10 --epochs 50 --lr 0.1 --exp-dir exp/resnet18-cifar10-figure6
 
 for activation in relu tanh;
 do
-    python3 train.py mlp-${activation}-no-bias-cifar10-figure6 --model mlp  --mlp-activation ${activation} --dataset cifar10 --epochs $1 --lr 0.1 --exp-dir  exp/mlp-${activation}-no-bias-cifar10-figure6
+    python3 train.py mlp-${activation}-no-bias-cifar10-figure6 --model mlp  --mlp-activation ${activation} --dataset cifar10 --epochs 50 --lr 0.1 --exp-dir  exp/mlp-${activation}-no-bias-cifar10-figure6
     
-    python3 train.py mlp-${activation}-bias-cifar10-figure6 --model mlp  --mlp-activation ${activation} --mlp-bias --dataset cifar10 --epochs $1 --lr 0.1 --exp-dir  exp/mlp-${activation}-bias-cifar10-figure6
+    python3 train.py mlp-${activation}-bias-cifar10-figure6 --model mlp  --mlp-activation ${activation} --mlp-bias --dataset cifar10 --epochs 50 --lr 0.1 --exp-dir  exp/mlp-${activation}-bias-cifar10-figure6
     
 done
 
