@@ -65,7 +65,6 @@ def get_cifar10_loaders(use_half_train=False, data_aug=False, batch_size=128, da
                                             transforms.RandomRotation(2),
                                             normalize_transform])
     test_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
-    print(train_transform)
     original_train_dataset = datasets.CIFAR10(root=os.path.join('data', 'cifar10_data'),
                                               train=True, transform=train_transform, download=True)
     original_test_dataset = datasets.CIFAR10(root=os.path.join('data', 'cifar10_data'),
