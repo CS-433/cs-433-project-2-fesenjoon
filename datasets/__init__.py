@@ -65,7 +65,6 @@ def get_cifar10_loaders(use_half_train=False, data_aug=False, batch_size=128, da
                                             transforms.RandomRotation(2),
                                             normalize_transform])
     test_transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
-    print(train_transform)
     original_train_dataset = datasets.CIFAR10(root=os.path.join('data', 'cifar10_data'),
                                               train=True, transform=train_transform, download=True)
     original_test_dataset = datasets.CIFAR10(root=os.path.join('data', 'cifar10_data'),
@@ -118,7 +117,7 @@ def get_cifar10_first_half_loaders(batch_size=128, data_aug=False, drop_last=Fal
 
     dataset_size = len(original_train_dataset)
     split = int(np.floor(0.5 * dataset_size))
-    _, second_half_dataset = random_split(original_train_dataset, [dataset_size - split, split])
+    first_half_dataset, _ = random_split(original_train_dataset, [dataset_size - split, split])
 
     loader_args = {
         "batch_size": batch_size,
@@ -126,7 +125,7 @@ def get_cifar10_first_half_loaders(batch_size=128, data_aug=False, drop_last=Fal
 
 
     train_loader = torch.utils.data.DataLoader(
-        dataset=second_half_dataset,
+        dataset=first_half_dataset,
         shuffle=True,
         drop_last=drop_last,
         **loader_args)
@@ -139,7 +138,7 @@ def get_cifar10_first_half_loaders(batch_size=128, data_aug=False, drop_last=Fal
     return {"train_loader": train_loader,
              "test_loader": test_loader}
 
-def get_cifar10_second_half_loaders(batch_size=128, data_aug=False, drop_last=False):
+def get_cifar10_two_half_loaders(batch_size=128, data_aug=False, drop_last=False):
     normalize_transform = transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
 
     if not data_aug:
@@ -161,14 +160,19 @@ def get_cifar10_second_half_loaders(batch_size=128, data_aug=False, drop_last=Fa
 
     dataset_size = len(original_train_dataset)
     split = int(np.floor(0.5 * dataset_size))
-    _, second_half_dataset = random_split(original_train_dataset, [dataset_size - split, split])
+    first_half_dataset, second_half_dataset = random_split(original_train_dataset, [dataset_size - split, split])
 
     loader_args = {
         "batch_size": batch_size,
     }
 
+    train_loader_first = torch.utils.data.DataLoader(
+        dataset=first_half_dataset,
+        shuffle=True,
+        drop_last=drop_last,
+        **loader_args)
 
-    train_loader = torch.utils.data.DataLoader(
+    train_loader_second = torch.utils.data.DataLoader(
         dataset=second_half_dataset,
         shuffle=True,
         drop_last=drop_last,
@@ -179,7 +183,8 @@ def get_cifar10_second_half_loaders(batch_size=128, data_aug=False, drop_last=Fa
         shuffle=False,
         **loader_args)
 
-    return {"train_loader": train_loader,
+    return {"train_loader_first": train_loader_first,
+            "train_loader_second": train_loader_second,
              "test_loader": test_loader}
    
 
@@ -400,7 +405,7 @@ def get_svhn_online_with_val_loader(split_size):
 dataset_factories = {
     'cifar10': get_cifar10_loaders,
     'first_half_cifar10': get_cifar10_first_half_loaders,
-    'second_half_cifar10': get_cifar10_second_half_loaders,
+    'two_half_cifar10': get_cifar10_two_half_loaders,
     'half_cifar10': partial(get_cifar10_loaders, use_half_train=True),
     'partial_with_val_cifar10': get_cifar10_partial_with_val_loader,
     'online_with_val_cifar10': get_cifar10_online_with_val_loader,
