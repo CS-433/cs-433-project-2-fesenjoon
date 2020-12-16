@@ -11,9 +11,8 @@ if [ $dataset1 == "cifar100" ]; then
 fi
 
 #for dataset_portion in 0.2 0.4 0.6 0.8 1.0;
-for dataset_portion in 0.3 0.6 1.0;
+for dataset_portion in 0.1 0.3 0.6 1.0;
 do
-    """
 	python3 train.py \
 		${dataset1}_${dataset_portion}_data \
 		--exp-dir exp/${dataset1}_${dataset_portion}_data \
@@ -21,7 +20,6 @@ do
 		--lr 0.001 \
 		--optimizer sgd \
 		--dataset-portion $dataset_portion
-	"""
 
 	python3 train.py \
 		${dataset1}_then_${dataset2}_${dataset_portion}_data \
