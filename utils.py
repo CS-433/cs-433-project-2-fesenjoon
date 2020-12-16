@@ -9,7 +9,8 @@ def get_data_for_runs(runs, exp_dir=os.path.join(root_dir, "exp")):
     summaries = {}
 
     for run_dir, title in runs.items():
-        run_dir = os.path.join(exp_dir, run_dir)
+        if not os.path.exists(run_dir):
+            run_dir = os.path.join(exp_dir, run_dir)
         for file in os.listdir(run_dir):
             if "events.out" in file:
                 #print(file)
