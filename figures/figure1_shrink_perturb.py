@@ -6,10 +6,11 @@ import numpy as np
 from utils import get_data_for_runs
 
 runs = {
-    "cifar_from_half_pretrained/Nov12_14-50-58": "Normal",
-    "cifar_from_half_pretrained_shrink0.1_perturb0.01/Nov23_14-03-03": "$\lambda = 0.1$",
-    "cifar_from_half_pretrained_shrink0.3_perturb0.01/Nov23_16-14-01": "$\lambda = 0.3$",
-    "cifar_from_half_pretrained_shrink0.6_perturb0.01/Nov23_18-24-33": "$\lambda = 0.6$",
+    "cifar/": "Random Initialization",
+    "half_cifar/": "Warm-Starting (No Shrink-Perturb)",
+    "cifar_from_half_pretrained_shrink0.1_perturb0.01/": "$\lambda = 0.1$",
+    "cifar_from_half_pretrained_shrink0.3_perturb0.01/": "$\lambda = 0.3$",
+    "cifar_from_half_pretrained_shrink0.6_perturb0.01/": "$\lambda = 0.6$",
 }
 
 

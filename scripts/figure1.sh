@@ -6,3 +6,5 @@ python3 train.py cifar_from_half_pretrained \
     --lr 0.001 \
     --optimizer sgd \
     --checkpoint exp/half_cifar/final.pt
+
+PYTHONPATH=./ python3 figures/figure1.py

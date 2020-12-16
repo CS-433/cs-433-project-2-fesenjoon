@@ -6,9 +6,9 @@ import numpy as np
 from utils import get_data_for_runs
 
 runs = {
-    "half_cifar/Nov12_10-41-03": "50%",
-    "cifar_from_half_pretrained/Nov12_14-50-58": "50%",
-    "cifar/Nov12_12-06-00/": "100%",
+    "half_cifar/": "50%",
+    "cifar_from_half_pretrained/": "50%",
+    "cifar/": "100%",
 }
 
 
