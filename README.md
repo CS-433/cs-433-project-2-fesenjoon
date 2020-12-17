@@ -12,6 +12,16 @@ The implementation is in Python 3.8. You may use the following command to instal
 
 ```pip install -r requirements.txt```
 
+## Libraries
+
+We use the following libraries:
+   
+* PyTorch: For all deep learning implementations
+* Matplotlib: For plotting
+* Torchvision: For loading datasets
+* Tensorboard: To store results
+* Tensorflow: To read tensorboard format
+* Scipy: Used in data processing of SVHN by Torchvision
 
 ## Experiments
 
@@ -37,6 +47,8 @@ The weights for ResNet-18 trained on half of CIFAR10 and checkpointed after ever
 To use, extract the zip file and put the contents in `exp/half_cifar`. 
 
 Then run the commands normally excluding the one for training a model on half of CIFAR10. 
+
+Furthermore, results of individual runs for Table 1 (without averaging) is available under `tables` directory in NumPy format. 
 
 ## Contributors
 * Klim Kireev
