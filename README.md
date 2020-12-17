@@ -41,6 +41,15 @@ These include:
    * `data_augmentation.sh`: Generates Figure 1 of the original paper with data augmentation.
    * `figure5_augmentation.sh`: Generates Figure 5 of the original paper with data augmentation instead of shirnk perturb.
 
+## Training Scripts
+
+There are several training scripts, which train models based on different settings of the experiments. 
+Most experiments use `train.py` or `train_online.py`. To get information about what a script does run it with `-h` flag:
+ 
+ ```python3 train.py -h```
+ 
+ Alternatively, read the description of the ArgumentParser in the code.
+
 ## Pre-trained Models
 The weights for ResNet-18 trained on half of CIFAR10 and checkpointed after every 10th epoch is available at: https://github.com/CS-433/cs-433-project-2-fesenjoon/releases/download/resnet18-half-cifar10/Dec12_21-44-54.zip
 
