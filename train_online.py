@@ -8,6 +8,8 @@ import torch
 
 import models
 import datasets
+from utils import train_one_epoch, eval_on_dataloader
+
 try:
     from tensorboardX import SummaryWriter
 except:
@@ -18,6 +20,7 @@ def build_parser():
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--title', type=str)
+    parser.add_argument('--exp-dir', type=str, default=None)
     parser.add_argument('--model', type=str, default='resnet18', choices=models.get_available_models())
 #     parser.add_argument('--dataset', type=str, default='cifar10', choices=datasets.get_available_datasets())
     parser.add_argument('--lr', type=float, default=0.001)
@@ -42,8 +45,11 @@ def main(args):
     print("---")
 
     experiment_time = datetime.now().strftime('%b%d_%H-%M-%S')
-    experiment_dir = os.path.join('exp', args.title, experiment_time)
-    os.makedirs(experiment_dir)
+    if args.exp_dir:
+        experiment_dir = args.exp_dir
+    else:
+        experiment_dir = os.path.join('exp', args.title, experiment_time)
+    os.makedirs(experiment_dir, exist_ok=True)
     with open(os.path.join(experiment_dir, "config.json"), "w") as f:
         json.dump(args_dict, f, indent=4, sort_keys=True, default=lambda x: x.__name__)
 
@@ -52,49 +58,6 @@ def main(args):
         print("CUDA Recognized")
     else:
         device = torch.device('cpu')
-
-    def get_accuracy(logit, true_y):
-        pred_y = torch.argmax(logit, dim=1)
-        return torch.true_divide((pred_y == true_y).sum(), len(true_y))
-    
-    def train_one_epoch(model, optimizer, criterion, train_dataloader):
-        accuracies = []
-        losses = []
-        for batch_idx, (data_x, data_y) in enumerate(train_dataloader):
-            data_x = data_x.to(device)
-            data_y = data_y.to(device)
-
-            optimizer.zero_grad()
-            model_y = model(data_x)
-            loss = criterion(model_y, data_y)
-            batch_accuracy = get_accuracy(model_y, data_y)
-            loss.backward()
-            optimizer.step()
-
-            accuracies.append(batch_accuracy.item())
-            losses.append(loss.item())
-
-        train_loss = np.mean(losses)
-        train_accuracy = np.mean(accuracies)
-        return train_loss, train_accuracy
-    
-    def eval_on_dataloader(model, dataloader):
-        accuracies = []
-        losses = []
-        for batch_idx, (data_x, data_y) in enumerate(dataloader):
-            data_x = data_x.to(device)
-            data_y = data_y.to(device)
-
-            model_y = model(data_x)
-            loss = criterion(model_y, data_y)
-            batch_accuracy = get_accuracy(model_y, data_y)
-
-            accuracies.append(batch_accuracy.item())
-            losses.append(loss.item())
-
-        loss = np.mean(losses)
-        accuracy = np.mean(accuracies)
-        return loss, accuracy
 
     try:
         summary_writer = SummaryWriter(logdir=experiment_dir)
@@ -127,9 +90,9 @@ def main(args):
         while True:
             if epoch % 5 == 0:
                 print(f"Starting training in epoch {epoch + 1}")
-            train_loss, train_accuracy = train_one_epoch(model, optimizer, criterion, train_loader)
-            val_loss, val_accuracy =  eval_on_dataloader(model, loaders['val_loader'])
-            test_loss, test_accuracy = eval_on_dataloader(model, loaders['test_loader'])
+            train_loss, train_accuracy = train_one_epoch(device, model, optimizer, criterion, train_loader)
+            val_loss, val_accuracy =  eval_on_dataloader(device, criterion, model, loaders['val_loader'])
+            test_loss, test_accuracy = eval_on_dataloader(device, criterion, model, loaders['test_loader'])
             train_accuracies.append(train_accuracy)
             epoch += 1
             summary_writer.add_scalar("test_accuracy", test_accuracy, epoch)
@@ -144,8 +107,8 @@ def main(args):
                 print("Convergence condition met")
                 break
 
-        val_loss, val_accuracy = eval_on_dataloader(model, loaders['val_loader'])
-        test_loss, test_accuracy = eval_on_dataloader(model, loaders['test_loader'])
+        val_loss, val_accuracy = eval_on_dataloader(device, criterion, model, loaders['val_loader'])
+        test_loss, test_accuracy = eval_on_dataloader(device, criterion, model, loaders['test_loader'])
         summary_writer.add_scalar("online_val_accuracy", val_accuracy, n_train)
         summary_writer.add_scalar("online_val_loss", val_loss, n_train)
         summary_writer.add_scalar("online_test_accuracy", test_accuracy, n_train)
@@ -156,7 +119,7 @@ def main(args):
         training_times_online.append(training_time)
         summary_writer.add_scalar("online_train_time", training_time, n_train)
 
-
+    summary_writer.close()
 
 if __name__ == "__main__":
     parser = build_parser()

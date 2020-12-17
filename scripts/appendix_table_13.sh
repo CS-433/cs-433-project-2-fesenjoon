@@ -29,4 +29,4 @@ python3 train.py \
 
 done
 
-
+PYTHONPATH=. python3 figures/appendix-table-13.py

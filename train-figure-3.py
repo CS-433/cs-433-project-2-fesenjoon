@@ -8,12 +8,14 @@ import torch
 
 import models
 import datasets
+from utils import eval_on_dataloader, train_one_epoch
+
 
 def train(lr=0.1, batch_size=64, max_epoch=700, rs=7, save=False, title='0', outdir='fig3', resume_model=None, resume_epoch=0, half_dataset=False):
 
     #experiment_dir = outdir
     experiment_dir = os.path.join('exp', title, datetime.now().strftime('%b%d_%H-%M-%S'))
-    os.makedirs(experiment_dir)
+    os.makedirs(experiment_dir, exist_ok=True)
     # Set the seed
     torch.manual_seed(rs)
     np.random.seed(rs)
@@ -23,10 +25,6 @@ def train(lr=0.1, batch_size=64, max_epoch=700, rs=7, save=False, title='0', out
         #print("CUDA Recognized")
     else:
         device = torch.device('cpu')
-
-    def get_accuracy(logit, true_y):
-        pred_y = torch.argmax(logit, dim=1)
-        return (pred_y == true_y).sum() / len(true_y)
 
     model = models.get_model('resnet18').to(device)
 
@@ -41,43 +39,12 @@ def train(lr=0.1, batch_size=64, max_epoch=700, rs=7, save=False, title='0', out
 
     for epoch in range(resume_epoch, max_epoch + 1):
         print(f"Epoch {epoch}")
-        accuracies = []
-        losses = []
-        for batch_idx, (data_x, data_y) in enumerate(loaders["train_loader"]):
-            data_x = data_x.to(device)
-            data_y = data_y.to(device)
-
-            optimizer.zero_grad()
-            model_y = model(data_x)
-            loss = criterion(model_y, data_y)
-            batch_accuracy = get_accuracy(model_y, data_y)
-            loss.backward()
-            optimizer.step()
-
-            accuracies.append(batch_accuracy.item())
-            losses.append(loss.item())
-
-        train_loss = np.mean(losses)
-        train_accuracy = np.mean(accuracies)
+        train_loss, train_accuracy = train_one_epoch(device, model, optimizer, criterion, loaders["train_loader"])
         print("Train accuracy: {} Train loss: {}".format(train_accuracy, train_loss))
         test_accuracy = 0
         
         if not half_dataset:
-            accuracies = []
-            losses = []
-            for batch_idx, (data_x, data_y) in enumerate(loaders["test_loader"]):
-                data_x = data_x.to(device)
-                data_y = data_y.to(device)
-
-                model_y = model(data_x)
-                loss = criterion(model_y, data_y)
-                batch_accuracy = get_accuracy(model_y, data_y)
-
-                accuracies.append(batch_accuracy.item())
-                losses.append(loss.item())
-
-            test_loss = np.mean(losses)
-            test_accuracy = np.mean(accuracies)
+            test_loss, test_accuracy = eval_on_dataloader(device, criterion, model, loaders['test_loader'])
             print("Test accuracy: {} Test loss: {}".format(test_accuracy, test_loss))
 
         if train_accuracy > 0.99:
@@ -102,6 +69,8 @@ def build_parser():
 def main(args):
     bsizes = [16, 32, 64, 128]
     lrs = [0.001, 0.01, 0.1]
+    os.makedirs('exp/warm/', exist_ok=True)
+    os.makedirs('exp/random/', exist_ok=True)
 
     for i in range(args.index_start, args.index_stop + 1):
         np.random.seed(i + args.random_seed)

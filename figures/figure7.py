@@ -20,7 +20,6 @@ plt.subplots(nrows, ncols, figsize=(ncols * 3.5, nrows * 3.5))
 for idx, tag in enumerate(tags):
     plt.subplot(nrows, ncols, idx + 1)
     for i, title in enumerate(summaries):
-        datas[tag][i] = datas[tag][i][:13]
         x = np.arange(0, len(datas[tag][i])) * 2.5
         y = datas[tag][i]
         if 'accuracy' in tag:

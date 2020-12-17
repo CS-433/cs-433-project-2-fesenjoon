@@ -8,6 +8,8 @@ import torch
 
 import models
 import datasets
+from utils import train_one_epoch, eval_on_dataloader
+
 try:
     from tensorboardX import SummaryWriter
 except:
@@ -51,53 +53,6 @@ def main(args):
     else:
         device = torch.device('cpu')
 
-    def get_accuracy(logit, true_y):
-        pred_y = torch.argmax(logit, dim=1)
-        return torch.true_divide((pred_y == true_y).sum(), len(true_y))
-    
-    
-    def train_one_epoch(model, optimizer, criterion, train_dataloader):
-        accuracies = []
-        losses = []
-        for batch_idx, (data_x, data_y) in enumerate(train_dataloader):
-            data_x = data_x.to(device)
-            data_y = data_y.to(device)
-
-            optimizer.zero_grad()
-            model_y = model(data_x)
-#             print("Model_y", model_y.shape)
-#             print("Data_y", data_y.shape)
-            loss = criterion(model_y, data_y)
-            batch_accuracy = get_accuracy(model_y, data_y)
-            loss.backward()
-            optimizer.step()
-
-            accuracies.append(batch_accuracy.item())
-            losses.append(loss.item())
-
-        train_loss = np.mean(losses)
-        train_accuracy = np.mean(accuracies)
-        return train_loss, train_accuracy
-    
-    def eval_on_dataloader(model, dataloader):
-        accuracies = []
-        losses = []
-        for batch_idx, (data_x, data_y) in enumerate(dataloader):
-            data_x = data_x.to(device)
-            data_y = data_y.to(device)
-
-            model_y = model(data_x)
-            loss = criterion(model_y, data_y)
-            batch_accuracy = get_accuracy(model_y, data_y)
-
-            accuracies.append(batch_accuracy.item())
-            losses.append(loss.item())
-
-        loss = np.mean(losses)
-        accuracy = np.mean(accuracies)
-        return loss, accuracy
-    
-    
     # Training with Random Initialization 
     overal_result = {}
     init_type = "random"
@@ -133,8 +88,8 @@ def main(args):
                 while(not stop_indicator):
                     if epoch % 5 == 0:
                         print(f"\t Training in epoch {epoch + 1} \t")
-                    train_loss, train_accuracy = train_one_epoch(model, optimizer, criterion, loaders['train_loader'])
-                    train_loss, train_accuracy = eval_on_dataloader(model, loaders['train_loader'])
+                    train_loss, train_accuracy = train_one_epoch(device, model, optimizer, criterion, loaders['train_loader'])
+                    train_loss, train_accuracy = eval_on_dataloader(device, criterion, model, loaders['train_loader'])
 
                     train_accuracies.append(train_accuracy)
                     epoch += 1
@@ -146,9 +101,8 @@ def main(args):
                         if np.std(train_accuracies[-args.convergence_epochs:]) < args.convergence_accuracy_change_threshold:
                             print(f"\tConvergence codition met. Training accuracy = {train_accuracy} stopped improving")
                             stop_indicator = True
-                            
-                        
-                test_loss, test_accuracy =  eval_on_dataloader(model, loaders['test_loader'])
+
+                test_loss, test_accuracy =  eval_on_dataloader(device, criterion, model, loaders['test_loader'])
                 print(f"\tTest accuracy = {test_accuracy}")
                 model_result[model_name] = test_accuracy
                 
@@ -191,8 +145,8 @@ def main(args):
                 while(not stop_indicator):
                     if epoch % 5 == 0:
                         print(f"\tPre-training in epoch {epoch + 1}")
-                    train_loss, train_accuracy = train_one_epoch(model, optimizer, criterion, loaders['train_loader'])
-                    train_loss, train_accuracy = eval_on_dataloader(model, loaders['train_loader'])
+                    train_loss, train_accuracy = train_one_epoch(device, model, optimizer, criterion, loaders['train_loader'])
+                    train_loss, train_accuracy = eval_on_dataloader(device, criterion, model, loaders['train_loader'])
                     
                     train_accuracies.append(train_accuracy)
                     epoch += 1
@@ -213,8 +167,8 @@ def main(args):
                 while(not stop_indicator):
                     if epoch % 5 == 0:
                         print(f"\t Training in epoch {epoch + 1}")
-                    train_loss, train_accuracy = train_one_epoch(model, optimizer, criterion, loaders['train_loader'])
-                    train_loss, train_accuracy = eval_on_dataloader(model, loaders['train_loader'])
+                    train_loss, train_accuracy = train_one_epoch(device, model, optimizer, criterion, loaders['train_loader'])
+                    train_loss, train_accuracy = eval_on_dataloader(device, criterion, model, loaders['train_loader'])
                     
                     train_accuracies.append(train_accuracy)
                     epoch += 1
@@ -227,7 +181,7 @@ def main(args):
                             print(f"\tConvergence codition met. Training accuracy = {train_accuracy} stopped improving")
                             stop_indicator = True
 
-                test_loss, test_accuracy =  eval_on_dataloader(model, loaders['test_loader'])
+                test_loss, test_accuracy =  eval_on_dataloader(device, criterion, model, loaders['test_loader'])
                 print(f"\tTest accuracy = {test_accuracy}")
                 model_result[model_name] = test_accuracy
                 

@@ -3,7 +3,7 @@ import numpy as np
 from utils import get_data_for_runs
 
 
-datas, _ = get_data_for_runs({"exp/half_cifar/Dec12_21-44-54": "Half"})
+datas, _ = get_data_for_runs({"exp/half_cifar/": "Half"})
 
 plt.subplots(1, 2, figsize=(6, 3))
 plt.subplot(1, 2, 1)
