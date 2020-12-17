@@ -31,6 +31,13 @@ These include:
    * `data_augmentation.sh`: Generates Figure 1 of the original paper with data augmentation.
    * `data_augmentation_gradients.sh`: Generates Figure 8 of the original paper with data augmentation instead of shirnk perturb.
 
+## Pre-trained Models
+The weights for ResNet-18 trained on half of CIFAR10 and checkpointed after every 10th epoch is available at: https://github.com/CS-433/cs-433-project-2-fesenjoon/releases/download/resnet18-half-cifar10/Dec12_21-44-54.zip
+
+To use, extract the zip file and put the contents in `exp/half_cifar`. 
+
+Then run the commands normally excluding the one for training a model on half of CIFAR10. 
+
 ## Contributors
 * Klim Kireev
 * Amirkeivan Mohtashami
