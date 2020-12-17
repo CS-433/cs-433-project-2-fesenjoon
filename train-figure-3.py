@@ -13,7 +13,7 @@ def train(lr=0.1, batch_size=64, max_epoch=700, rs=7, save=False, title='0', out
 
     #experiment_dir = outdir
     experiment_dir = os.path.join('exp', title, datetime.now().strftime('%b%d_%H-%M-%S'))
-    os.makedirs(experiment_dir)
+    os.makedirs(experiment_dir, exist_ok=True)
     # Set the seed
     torch.manual_seed(rs)
     np.random.seed(rs)
@@ -102,6 +102,8 @@ def build_parser():
 def main(args):
     bsizes = [16, 32, 64, 128]
     lrs = [0.001, 0.01, 0.1]
+    os.makedirs('exp/warm/', exist_ok=True)
+    os.makedirs('exp/random/', exist_ok=True)
 
     for i in range(args.index_start, args.index_stop + 1):
         np.random.seed(i + args.random_seed)

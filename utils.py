@@ -17,6 +17,7 @@ def get_data_for_runs(runs, exp_dir=os.path.join(root_dir, "exp")):
                 if title not in summaries:
                     summaries[title] = []
                 summaries[title].append(os.path.join(run_dir, file))
+                break
 
     datas = {}
     for i, title in enumerate(summaries):
