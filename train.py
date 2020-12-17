@@ -73,10 +73,17 @@ def main(args, experiment_dir=None):
         pred_y = torch.argmax(logit, dim=1)
         return torch.true_divide((pred_y == true_y).sum(), len(true_y))
 
-    #loaders = datasets.get_dataset(args.dataset)
     dataset_args = {}
     if args.dataset_portion is not None:
         dataset_args["dataset_portion"] = args.dataset_portion
+
+    if args.grad_track:
+        two_half_sets = datasets.get_dataset("two_half_cifar10", data_aug=args.data_aug, **dataset_args)
+        first_loader = two_half_sets['train_loader_first']
+        second_loader = two_half_sets['train_loader_second']
+
+    #loaders = datasets.get_dataset(args.dataset)
+
     loaders = datasets.get_dataset(args.dataset, data_aug=args.data_aug, **dataset_args)
     num_classes = loaders.get('num_classes', 10)
     model_args = {}
@@ -129,6 +136,43 @@ def main(args, experiment_dir=None):
         print(f"Epoch {epoch}")
         accuracies = []
         losses = []
+        if (args.grad_track):
+            avg_grad = []
+            for batch_idx, (data_x, data_y) in enumerate(first_loader):
+                data_x = data_x.to(device)
+                data_y = data_y.to(device)
+                optimizer.zero_grad()
+                model_y = model(data_x)
+                loss = criterion(model_y, data_y)
+                loss.backward()
+                grads = []
+                for param in model.parameters():
+                    grads.append(param.grad.view(-1))
+                grads = torch.cat(grads)
+                grad_norm = torch.norm(grads)
+                avg_grad.append(grad_norm)
+            first_grad = torch.stack(avg_grad).mean()
+            print('Grad for the first part: ',first_grad)
+            summary_writer.add_scalar("grad_norm_first", first_grad, epoch)
+
+            avg_grad = []
+            for batch_idx, (data_x, data_y) in enumerate(second_loader):
+                data_x = data_x.to(device)
+                data_y = data_y.to(device)
+                optimizer.zero_grad()
+                model_y = model(data_x)
+                loss = criterion(model_y, data_y)
+                loss.backward()
+                grads = []
+                for param in model.parameters():
+                    grads.append(param.grad.view(-1))
+                grads = torch.cat(grads)
+                grad_norm = torch.norm(grads)
+                avg_grad.append(grad_norm)
+            second_grad = torch.stack(avg_grad).mean()
+            print('Grad for the second part: ',second_grad)
+            summary_writer.add_scalar("grad_norm_second", second_grad, epoch)
+
         for batch_idx, (data_x, data_y) in enumerate(loaders["train_loader"]):
             data_x = data_x.to(device)
             data_y = data_y.to(device)
@@ -138,17 +182,12 @@ def main(args, experiment_dir=None):
             loss = criterion(model_y, data_y)
             batch_accuracy = get_accuracy(model_y, data_y)
             loss.backward()
-            
-            if (args.grad_track):
-                grads = []
-                for param in model.parameters():
-                    grads.append(param.grad.view(-1))
-                grads = torch.cat(grads)
-                summary_writer.add_scalar("grad_norm", torch.norm(grads), batch_idx + (epoch - 1) * len(loaders["train_loader"]))
-            
             optimizer.step()
+
             accuracies.append(batch_accuracy.item())
             losses.append(loss.item())
+
+
 
 
         train_loss = np.mean(losses)
