@@ -18,7 +18,7 @@ except:
 
 def build_parser():
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="""Trains models in the online setting described in the original paper.""")
     parser.add_argument('--title', type=str)
     parser.add_argument('--exp-dir', type=str, default=None)
     parser.add_argument('--model', type=str, default='resnet18', choices=models.get_available_models())

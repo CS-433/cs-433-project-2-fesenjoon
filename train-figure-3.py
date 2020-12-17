@@ -59,7 +59,8 @@ def train(lr=0.1, batch_size=64, max_epoch=700, rs=7, save=False, title='0', out
 
 def build_parser():
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="""This scripts generates Figure 3 of the original paper.
+    It performs training in the offline setting with various learning rate and batch sizes.""")
     parser.add_argument('--random-seed', type=int, default=42)
     parser.add_argument('--index_start', type=int, default=0)
     parser.add_argument('--index_stop', type=int, default=100)

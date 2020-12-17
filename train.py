@@ -16,7 +16,8 @@ except:
 
 def build_parser():
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="""Trains a deep learning model normally, 
+    possibly from a checkpoint with our without shrink perturb.""")
     parser.add_argument('title', type=str)
     parser.add_argument('--exp-dir', type=str, default=None)
     parser.add_argument('--model', type=str, default='resnet18', choices=models.get_available_models())

@@ -18,7 +18,9 @@ except:
 
 def build_parser():
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="""This script generates Table 1 of the paper. 
+    It is similar to train.py except for subtle differences such as that it checks for convergence rather than
+    training a fixed number of epochs.""")
     parser.add_argument('title', type=str)
     parser.add_argument('--lr', type=float, default=0.001)
     parser.add_argument('--convergence-epochs', type=int, default=3) # If the minimum val loss does not decrease in 3 epochs training will stop

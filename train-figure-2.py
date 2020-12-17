@@ -18,7 +18,11 @@ except:
 
 def build_parser():
 
-    parser = argparse.ArgumentParser()
+    parser = argparse.ArgumentParser(description="""This script generates Figure 2 of the original paper. 
+    It is similar to a combination of train.py and train_online.py. 
+    There are subtle differences, including: 
+        1- train.py does not have a convergence threshold.
+        2- Convergence threshold is checked slightly differently than train_online.py""")
     parser.add_argument('title', type=str)
     parser.add_argument('--model', type=str, default='resnet18', choices=models.get_available_models())
     parser.add_argument('--dataset', type=str, default='cifar10', choices=['cifar10', 'svhn'])

@@ -12,6 +12,16 @@ The implementation is in Python 3.8. You may use the following command to instal
 
 ```pip install -r requirements.txt```
 
+## Libraries
+
+We use the following libraries:
+   
+* PyTorch: For all deep learning implementations
+* Matplotlib: For plotting
+* Torchvision: For loading datasets
+* Tensorboard: To store results
+* Tensorflow: To read tensorboard format
+* Scipy: Used in data processing of SVHN by Torchvision
 
 ## Experiments
 
@@ -31,12 +41,23 @@ These include:
    * `data_augmentation.sh`: Generates Figure 1 of the original paper with data augmentation.
    * `figure5_augmentation.sh`: Generates Figure 5 of the original paper with data augmentation instead of shirnk perturb.
 
+## Training Scripts
+
+There are several training scripts, which train models based on different settings of the experiments. 
+Most experiments use `train.py` or `train_online.py`. To get information about what a script does run it with `-h` flag:
+ 
+ ```python3 train.py -h```
+ 
+ Alternatively, read the description of the ArgumentParser in the code.
+
 ## Pre-trained Models
 The weights for ResNet-18 trained on half of CIFAR10 and checkpointed after every 10th epoch is available at: https://github.com/CS-433/cs-433-project-2-fesenjoon/releases/download/resnet18-half-cifar10/Dec12_21-44-54.zip
 
 To use, extract the zip file and put the contents in `exp/half_cifar`. 
 
 Then run the commands normally excluding the one for training a model on half of CIFAR10. 
+
+Furthermore, results of individual runs for Table 1 (without averaging) is available under `tables` directory in NumPy format. 
 
 ## Contributors
 * Klim Kireev
